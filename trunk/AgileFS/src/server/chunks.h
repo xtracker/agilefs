@@ -13,4 +13,8 @@
 
 ssize_t writechunk(off_t offset, char *buf, size_t size);
 
+size_t get_first_free_chunk();
+
+void free_chunk(size_t offset);
+
 #endif
