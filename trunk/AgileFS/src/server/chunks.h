@@ -17,10 +17,6 @@ struct free_chunk_link{
 	size_t *base;
 };
 
-struct free_chunk_operations{
-
-	int (*get_current)();
-};
 ssize_t write_chunk(const char *buf, off_t offset, size_t size);
 
 size_t get_first_free_chunk(const struct free_chunk_link *pfcl);

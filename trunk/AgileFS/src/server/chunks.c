@@ -8,6 +8,8 @@
 
 
 
-ssize_t write_chunk(char *buf, off_t offset, size_t size)
+ssize_t write_chunk(const char *buf, off_t offset, size_t size)
 {
+	return pwrite(1, buf, size, offset);
 }
+
