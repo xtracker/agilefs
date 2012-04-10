@@ -27,10 +27,8 @@
 #ifdef HAVE_SETXATTR
 #include <sys/xattr.h>
 #endif
-#include <hash/md5.h>
-#include <hash/sha1.h>
+#include "sha1.h"
 #include "fuse_type.h"
-#include "fuse_db.h"
 #include "fuse_io_util.h"
 #include "fuse_cache.h"
 
