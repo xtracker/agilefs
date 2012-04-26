@@ -1,3 +1,4 @@
+add_definitions(-Wall -O2)
 set(SERVER_SRC_LIST agilefs-server.c 
 	chunks.h chunks.c
 	db_ops.h db_ops.c)

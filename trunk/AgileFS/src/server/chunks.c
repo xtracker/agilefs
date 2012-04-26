@@ -16,13 +16,9 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <fcntl.h>
-
+#include <errno.h>
 #include "chunks.h"
 
-ssize_t write_chunk(const char *buf, off_t offset, size_t size)
-{
-	return pwrite(1, buf, size, offset);
-}
 
 /**
  * build free chunk link from file
@@ -30,18 +26,24 @@ ssize_t write_chunk(const char *buf, off_t offset, size_t size)
  */
 int init_free_chunk(struct free_chunk_link *pfcl, const char *path)
 {
-	int fd, total, i = 0;
+	int fd, total = 0, i = 0;
+
+	memset(pfcl, 0, sizeof(struct free_chunk_link));
+	pfcl->current = -1;
+
 	fd = open(path, O_RDONLY);
-	if (-1 == fd)
+	if (-1 == fd) {
+		perror("init error!\n");
 		return -1;
+	}
 	read(fd, pfcl, sizeof(int) * 2);
 	total = pfcl->total_cnt;
-	for (; total; ++i, total -= PER_LINK_SIZE)
-	{
-		pfcl->base[i] = (size_t *)malloc(sizeof(size_t) * PER_LINK_SIZE);
-		read(fd, pfcl->base[i], sizeof(size_t) * PER_LINK_SIZE);
+	for (; total; ++i, total -= PER_LINK_SIZE) {
+		pfcl->base[i] = (unsigned *)malloc(sizeof(unsigned) * PER_LINK_SIZE);
+		read(fd, pfcl->base[i], sizeof(unsigned) * PER_LINK_SIZE);
 	}
 	close(fd);
+	return 0;
 }
 
 /**
@@ -72,7 +74,7 @@ int add_free_chunk(struct free_chunk_link *pfcl, int offset)
 	int current = ++pfcl->current;
 	if (current >= total) {
 		pfcl->total_cnt += PER_LINK_SIZE;
-		pfcl->base[current >> 11] = (size_t *)malloc(sizeof(size_t) * PER_LINK_SIZE);
+		pfcl->base[current >> 11] = (unsigned *)malloc(sizeof(unsigned) * PER_LINK_SIZE);
 	}
 	free_link(pfcl, current) = offset;
 	//pfcl->base[current >> 11][current & (PER_LINK_SIZE - 1)] = offset;
@@ -82,10 +84,13 @@ int add_free_chunk(struct free_chunk_link *pfcl, int offset)
 
 int flush_free_chunk(struct free_chunk_link *pfcl, const char *path)
 {
-	int fd, total, i = 0;
-	fd = open(path, O_WRONLY | O_TRUNC);
+	int fd, total = pfcl->current, i = 0;
+	fd = open(path, O_WRONLY | O_TRUNC | O_CREAT, 0644);
 	if (fd == -1)
+	{
+		perror("flush error!\n");
 		return -1;
+	}
 
 	total &= ~(PER_LINK_SIZE - 1);
 	total += PER_LINK_SIZE;
@@ -93,10 +98,16 @@ int flush_free_chunk(struct free_chunk_link *pfcl, const char *path)
 	write(fd, pfcl, sizeof(int) * 2);
 	for (; total; ++i, total -= PER_LINK_SIZE)
 	{
-		write(fd, pfcl->base[i], sizeof(size_t) * PER_LINK_SIZE);
+		write(fd, pfcl->base[i], sizeof(unsigned) * PER_LINK_SIZE);
 		free(pfcl->base[i]);
 	}
 	close(fd);
 
 	return 0;
 }
+
+void printinfo(struct free_chunk_link *pfcl)
+{
+	printf("total_cnt = %d\ncurrent = %d\n", pfcl->total_cnt, pfcl->current);
+}
+

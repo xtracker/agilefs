@@ -3,6 +3,8 @@
  *
  */
 //#ifdef USE_BERKELEYDB 
+#ifndef _DB_OPS_H_
+#define _DB_OPS_H_
 struct block_data;
 struct db_data;
 
@@ -17,4 +19,5 @@ int db_get(void *hash, struct block_data *pbd);
 
 int db_del(void *hash);
 
+#endif
 //#endif // USE_BERKELEYDB 
