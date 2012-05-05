@@ -18,15 +18,22 @@
 #include "agilefs-def.h"
 #include "chunks.h"
 
+//forward declaration of global free_chunk_link struct
+
+struct chunk_file_info cfi = {
+
+	.fds = NULL,
+	.fcls = NULL,
+	.total = 0
+};
+
 int main(int agrc, char **argv)
 {
-	struct free_chunk_link fcl;
-	printf("sizeof(unsigned int) is %d\n", sizeof(int));
-	init_free_chunk(&fcl, "/home/jarvis/free.dat");
-	printinfo(&fcl);
-	add_free_chunk(&fcl, 0);
-	printinfo(&fcl);
-//	get_first_free_chunk(&fcl);
-	flush_free_chunk(&fcl, "/home/jarvis/free.dat");
+	printf("current process ID is %d\n", (int)getpid());
+//	umask(0);
+	init_chunk_file(&cfi, "global.xml");
+	getchar();
+	release_chunk_file(&cfi, "global.xml");
+	getchar();
 	return 0;
 }

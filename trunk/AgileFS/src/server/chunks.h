@@ -12,23 +12,31 @@
 #define _CHUNKS_H_
 
 #define FREE_CHUNK_MAX 1024
-#define PER_LINK_SIZE 1024
-#define PER_LINK_OFFSET 10
+#define PER_LIST_SIZE 1024
+#define PER_LIST_OFFSET 10
 
-struct free_chunk_link { //free chunks table
+struct free_chunk_list { //free chunks table
 	int total_cnt;
 	int current;
 	unsigned *base[FREE_CHUNK_MAX]; //up to 16TB per file
 };
 
-//free chunk link operations
-#define free_link(pfcl, current) \
-	(pfcl)->base[(current) >> PER_LINK_OFFSET][(current) & PER_LINK_SIZE]
+//free chunk list operations
+#define free_list(pfcl, current) \
+	(pfcl)->base[(current) >> PER_LIST_OFFSET][(current) & PER_LIST_SIZE]
 
-void printinfo(struct free_chunk_link *pfcl);
-int init_free_chunk(struct free_chunk_link *pfcl, const char *path);
-int flush_free_chunk(struct free_chunk_link *pfcl, const char *path);
-int add_free_chunk(struct free_chunk_link *pfcl, int offset);
-int get_first_free_chunk(struct free_chunk_link *pfcl);
+void printinfo(struct free_chunk_list *pfcl);
+int init_free_chunk(struct free_chunk_list *pfcl, const char *path);
+int flush_free_chunk(struct free_chunk_list *pfcl, const char *path);
+int add_free_chunk(struct free_chunk_list *pfcl, int offset);
+int get_first_free_chunk(struct free_chunk_list *pfcl);
 
+struct chunk_file_info {
+	int total;	
+	int *fds;
+	struct free_chunk_list *fcls;
+};
+
+int init_chunk_file(struct chunk_file_info *base, const char *path);
+int release_chunk_file(struct chunk_file_info *base, const char *path);
 #endif //#ifdef _CHUNKS_H_
