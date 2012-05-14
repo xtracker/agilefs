@@ -52,15 +52,8 @@ static void XMLCALL start_element_init(void *user_data, const char *name, const 
 static void XMLCALL start_element_release(void *user_data, const char *name, const char **atts)
 {
 	struct chunk_file_info_xml *pcfix = (struct chunk_file_info_xml *)user_data;
-/*	if (!strcmp(name, "total"))
-	{
-		int total = atoi(atts[1]);
-		pcfix->pcfi->total = total;
-		//pcfix->pcfi->fcls = (struct free_chunk_list *)malloc(sizeof(struct free_chunk_list) * total);
-		//pcfix->pcfi->fds = (int *)malloc(sizeof(int) * total);
-	}
-*/
-	if (!strcmp(name, "file"))
+
+	if (!strcmp(name, "file"))	//
 	{
 		close(pcfix->pcfi->fds[pcfix->i]);
 		flush_free_chunk(pcfix->pcfi->fcls + pcfix->i, atts[3]);
