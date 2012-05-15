@@ -21,7 +21,6 @@
 //forward declaration of global free_chunk_link struct
 
 struct chunk_file_info cfi = {
-
 	.fds = NULL,
 	.fcls = NULL,
 	.total = 0
