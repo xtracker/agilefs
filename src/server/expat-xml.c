@@ -73,6 +73,11 @@ static int chunk_file_parser(const char *xmlpath, struct chunk_file_info_xml *pc
 	int done;
 	char buf[BUFSIZ];
 	FILE *fp = fopen(xmlpath, "rb");
+	if (!fp)
+	{
+		printf("No configratin file avaliable!!\n");
+		return -1;
+	}
 	XML_Parser parser = XML_ParserCreate(NULL);
 	XML_SetUserData(parser, pcfix);
 	XML_SetElementHandler(parser, pcfix->start, end_element);

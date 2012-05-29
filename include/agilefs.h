@@ -6,4 +6,4 @@
  */
 #include <stdio.h>
 
-
+ssize_t agilefs_read();
