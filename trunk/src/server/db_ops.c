@@ -2,6 +2,8 @@
 #include <string.h>
 #include <db.h>
 #include "db_ops.h"
+
+
 static DB *dbp = NULL; //global BerkeleyDB handle
 
 struct block_data
