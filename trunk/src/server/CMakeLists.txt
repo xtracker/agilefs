@@ -4,6 +4,7 @@ set(SERVER_SRC_LIST
 	chunks.h chunks.c
 	db_ops.h db_ops.c
 	xmlparser.h expat-xml.c
+	chunks-io.h chunks-io.c
 	queue.c)
 add_executable(agilefs-server ${SERVER_SRC_LIST})
 target_link_libraries(agilefs-server db expat)

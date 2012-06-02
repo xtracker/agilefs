@@ -34,6 +34,7 @@ int get_first_free_chunk(struct free_chunk_list *pfcl);
 struct chunk_file_info {
 	int total;	
 	int *fds;
+	long *cur_size; // current size of a file (up to 4GB)
 	struct free_chunk_list *fcls;
 };
 

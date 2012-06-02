@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
 #include "expat.h"
@@ -39,10 +40,15 @@ static void XMLCALL start_element_init(void *user_data, const char *name, const 
 		pcfix->pcfi->total = total;
 		pcfix->pcfi->fcls = (struct free_chunk_list *)malloc(sizeof(struct free_chunk_list) * total);
 		pcfix->pcfi->fds = (int *)malloc(sizeof(int) * total);
+		pcfix->pcfi->cur_size = (long *)malloc(sizeof(long) * total);
 	}
 	else if (!strcmp(name, "file"))
 	{
-		pcfix->pcfi->fds[pcfix->i] = open(atts[1], O_RDWR | O_CREAT, 0644);
+		struct stat statbuf;
+		int ret = open(atts[1], O_RDWR | O_CREAT, 0644);
+		pcfix->pcfi->fds[pcfix->i] = ret;
+		ret = fstat(ret, &statbuf);
+		pcfix->pcfi->cur_size[pcfix->i] = statbuf.st_size;
 		init_free_chunk(pcfix->pcfi->fcls + pcfix->i, atts[3]);
 		++pcfix->i;
 	}
@@ -127,6 +133,11 @@ int release_chunk_file(struct chunk_file_info *base, const char *path)
 	{
 		free(base->fds);
 		base->fds = NULL;
+	}
+	if (base->cur_size)
+	{
+		free(base->cur_size);
+		base->cur_size = NULL;
 	}
 	return 0;
 }
