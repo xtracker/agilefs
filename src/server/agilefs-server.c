@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include "agilefs-def.h"
 #include "chunks.h"
 
@@ -29,7 +30,7 @@ struct chunk_file_info cfi = {
 int main(int agrc, char **argv)
 {
 	printf("current process ID is %d\n", (int)getpid());
-//	umask(0);
+	umask(0);
 	init_chunk_file(&cfi, "global.xml");
 	getchar();
 	release_chunk_file(&cfi, "global.xml");
