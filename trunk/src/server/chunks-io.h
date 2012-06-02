@@ -13,6 +13,5 @@ int get_proper_chunk_file(struct chunk_file_info *pcfi);
 int block_write(const char *buf, size_t size, struct chunk_file_info *pcfi);
 int block_write_exclusive();
 
-
 #endif
 
