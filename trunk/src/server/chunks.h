@@ -5,7 +5,7 @@
  * 
  * Date:2012-04-06
  * 
- * chunk server implements
+ * chunk server implements, free chunks operations
  *
  */
 #ifndef _CHUNKS_H_

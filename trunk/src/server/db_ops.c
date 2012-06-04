@@ -6,27 +6,30 @@
 
 static DB *dbp = NULL; //global BerkeleyDB handle
 
+/**
 struct block_data
 {
 	int share_num;
 	off_t offset;
 };
-
+*/
 struct db_data
 {
 	DBT key;
 	DBT val;
 };
 
-int DB_init()
+int DB_init(const char *db_path)
 {
 	int ret = 0;
 	u_int32_t flags;
 	ret = db_create(&dbp, NULL, 0);
 	if (ret)
 		return ret;
-	flags = DB_CREATE;	
-	ret = dbp->open(dbp, NULL, "/var/cas/cas.db", NULL, DB_BTREE, flags, 0);
+	flags = DB_CREATE; // | DB_THREAD;
+	ret = dbp->open(dbp, NULL, db_path, NULL, DB_BTREE, flags, 0);
+	if (ret)
+		dbp->err(dbp, ret, "Database open failed: %s\n",db_path);
 	return ret;
 }
 
@@ -51,7 +54,7 @@ int db_put(void *hash, struct block_data *pbd)
 	dd.key.size = 16;
 	dd.val.data = pbd;
 	dd.val.size = sizeof(struct block_data);
-	return dbp->put(dbp, NULL, &dd.key, &dd.val, DB_OVERWRITE);
+	return dbp->put(dbp, NULL, &dd.key, &dd.val,DB_NOOVERWRITE);
 }
 
 int db_get(void *hash, struct block_data *pbd)
@@ -72,5 +75,10 @@ int db_del(void *hash)
 	key.data = hash;
 	key.size = 16;
 	return dbp->del(dbp, NULL, &key, 0);
+}
+
+void db_err_log(int ret, const char *err_msg)
+{
+	dbp->err(dbp, ret, err_msg);
 }
 //#endif // USE_BERKELEYDB
