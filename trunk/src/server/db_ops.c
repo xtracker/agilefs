@@ -6,13 +6,6 @@
 
 static DB *dbp = NULL; //global BerkeleyDB handle
 
-/**
-struct block_data
-{
-	int share_num;
-	off_t offset;
-};
-*/
 struct db_data
 {
 	DBT key;
