@@ -22,6 +22,7 @@
 #include "chunks.h"
 #include "chunks-io.h"
 
+#include "md5.h"
 //forward declaration of global free_chunk_link struct
 
 extern int meta_server_init(const char *db_path);
@@ -29,21 +30,30 @@ extern int meta_server_close();
 
 struct chunk_file_info cfi = { 0 };
 
+
 char buf[4096];
+char hash[20] = {0};
 int main(int agrc, char **argv)
 {
 	int ret = 0;
+	int i = 0, fd = -1;;
 	printf("current process ID is %d\n", (int)getpid());
 	umask(0);
-	meta_server_init("/home/jarvis/agilefs-hash.db");
-	init_chunk_file(&cfi, "global.xml");
-	strcpy(buf, "this is a test of agilefs!!\n");
-	ret = block_write("0", buf, 4096, &cfi);
-	memset(buf, 0 , sizeof(buf));
-	ret = block_read("0", buf, 4096, &cfi);
-	printf("%d\n content is %s\n", ret, buf);
+	ret = meta_server_init("/home/jarvis/agilefs-hash.db");
+	ret = init_chunk_file(&cfi, "global.xml");
+	system("date");
+	fd = open(argv[1], O_RDONLY);
+	do {
+	
+		ret = read(fd, buf, 4096);
+		md5((unsigned char *)buf, 4096, (unsigned char *)hash);
+		put_new_chunk(hash, buf, 4096, &cfi);
+	} while (ret > 0);
+	system("date");
+	
 	release_chunk_file(&cfi, "global.xml");
 	meta_server_close();
+	puts("pree any key to continue !!");
 	getchar();
 	return 0;
 }
