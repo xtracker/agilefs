@@ -18,9 +18,12 @@
 ./src/server/xmlparser.h
 ./src/server/agilefs-server.c
 ./src/server/db_ops.c
+./src/server/meta-server.c
 ./src/server/expat-xml.h
 ./src/server/chunks.h
 ./src/server/expat-xml.c
+./include/agilefs-errno.h
 ./include/agilefs-def.h
 ./include/agilefs.h
 ./build/CMakeFiles/CompilerIdC/CMakeCCompilerId.c
+./build/CMakeFiles/CompilerIdCXX/CMakeCXXCompilerId.cpp
