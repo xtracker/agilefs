@@ -34,16 +34,14 @@
 static void XMLCALL start_element_init(void *user_data, const char *name, const char **atts)
 {
 	struct chunk_file_info_xml *pcfix = (struct chunk_file_info_xml *)user_data;
-	if (!strcmp(name, "total"))
-	{
+	if (!strcmp(name, "total"))	{
 		int total = atoi(atts[1]);
 		pcfix->pcfi->total = total;
 		pcfix->pcfi->fcls = (struct free_chunk_list *)malloc(sizeof(struct free_chunk_list) * total);
 		pcfix->pcfi->fds = (int *)malloc(sizeof(int) * total);
 		pcfix->pcfi->cur_size = (long *)malloc(sizeof(long) * total);
 	}
-	else if (!strcmp(name, "file"))
-	{
+	else if (!strcmp(name, "file"))	{
 		struct stat statbuf;
 		int ret = open(atts[1], O_RDWR | O_CREAT, 0644);
 		pcfix->pcfi->fds[pcfix->i] = ret;
@@ -59,8 +57,7 @@ static void XMLCALL start_element_release(void *user_data, const char *name, con
 {
 	struct chunk_file_info_xml *pcfix = (struct chunk_file_info_xml *)user_data;
 
-	if (!strcmp(name, "file"))	//
-	{
+	if (!strcmp(name, "file")) {
 		close(pcfix->pcfi->fds[pcfix->i]);
 		flush_free_chunk(pcfix->pcfi->fcls + pcfix->i, atts[3]);
 		++pcfix->i;
@@ -79,8 +76,7 @@ static int chunk_file_parser(const char *xmlpath, struct chunk_file_info_xml *pc
 	int done;
 	char buf[BUFSIZ];
 	FILE *fp = fopen(xmlpath, "rb");
-	if (!fp)
-	{
+	if (!fp) {
 		printf("No configratin file avaliable!!\n");
 		return -1;
 	}
@@ -124,18 +120,15 @@ int release_chunk_file(struct chunk_file_info *base, const char *path)
 	};
 	if (-1 == chunk_file_parser(path, &cfix))
 		return -1;
-	if (base->fcls)
-	{
+	if (base->fcls)	{
 		free(base->fcls);
 		base->fcls = NULL;
 	}
-	if (base->fds)
-	{
+	if (base->fds) {
 		free(base->fds);
 		base->fds = NULL;
 	}
-	if (base->cur_size)
-	{
+	if (base->cur_size)	{
 		free(base->cur_size);
 		base->cur_size = NULL;
 	}

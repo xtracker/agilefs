@@ -22,14 +22,13 @@
 
 extern struct chunk_file_info cfi;
 
-static int get_proper_chunk_file(struct chunk_file_info *pcfi)
+int get_proper_chunk_file(struct chunk_file_info *pcfi)
 {
 	int ret = -1, i = 0;
-	long __min = 0xffffffffu;
-	for (; i < pcfi->total; ++i)
-	{
-		long capcity = pcfi->cur_size[i];
-		long current = (long) pcfi->fcls[i].current;
+	long __min = 0xffffffffu, capcity, current;
+	for (; i < pcfi->total; ++i) {
+		capcity = pcfi->cur_size[i];
+		current = (long) pcfi->fcls[i].current;
 		capcity -= (current == -1 ? 0 : (current << FSP_OFFSET));
 		if (capcity < MAX_CHUNK_FILE_SIZE && __min > capcity)
 			__min = capcity, ret = i;
@@ -54,24 +53,24 @@ int block_write(void *key, const char *buf, size_t size,
 	fd_index = get_proper_chunk_file(pcfi);
 	if (fd_index == -1)
 		return -1;
+	
 	pfcl = &pcfi->fcls[fd_index];
 	ret = get_first_free_chunk(pfcl);
-	if (ret == -1)
-	{
+
+	if (ret == -1) {
 		offset = pcfi->cur_size[fd_index];
 		pcfi->cur_size[fd_index] += FSP_SIZE;
 	}
-	else
+	else {
 		offset = (((off_t)ret) << FSP_OFFSET);
+	}
 
 //	printf("write to %d offset is %d\n", fd_index, offset);
-
 	ret = pwrite(pcfi->fds[fd_index], buf, size, offset);
-	if (ret == FSP_SIZE)
-	{
+	
+	if (ret == FSP_SIZE) {
 		int x = write_hash_db(key, offset, fd_index);
-		if (x)
-		{
+		if (x) {
 			ret = -1;
 			db_err_log(x, "hash error");
 		}
@@ -90,12 +89,12 @@ int block_read(void *key, char *buf, size_t size,
 	int ret = 0, fd = -1;
 	struct block_data bd = { 0 };
 	ret = db_get(key, &bd);
-	if (ret)
-	{
+	
+	if (ret) {
 		db_err_log(ret, "retrive key error\n");
 		return -1;
 	}
-	printf("read share_num is %d\n", bd.share_num);
+	printf("read share_num is %d\n", bd.ref_count);
 	fd = pcfi->fds[bd.fd_index];
 	ret = pread(fd, buf, size, bd.offset);
 	return ret;
@@ -113,16 +112,14 @@ int put_new_chunk(void *key, const char *buf, size_t size,
 	int ret = 0;
 	struct block_data bd = {0};
 	ret = db_get(key, &bd);
-	if (ret)
-	{
+	if (ret) {
 		ret = block_write(key, buf, size, pcfi);
+		ret = (ret == FSP_SIZE ? 0 : -1);
 	}
-	else
-	{
-		++bd.share_num;
+	else {
+		++bd.ref_count;
 		ret = db_put(key, &bd);
-		if (ret)
-		{
+		if (ret) {
 			db_err_log(ret, "update hash db error :");
 			ret = -1;
 		}
@@ -141,15 +138,12 @@ int del_chunk(void *key, struct chunk_file_info *pcfi)
 	int ret = 0;
 	struct block_data bd = {0};
 	ret = db_get(key, &bd);
-	if (ret)
-	{
-		if (bd.share_num > 1)
-		{
-			--bd.share_num;
+	if (ret) {
+		if (bd.ref_count> 1) {
+			--bd.ref_count;
 			ret = db_put(key, &bd);
 		}
-		else
-		{
+		else {
 			add_free_chunk(&pcfi->fcls[bd.fd_index], (unsigned)(bd.offset >> FSP_OFFSET));
 			ret = db_del(key);
 		}

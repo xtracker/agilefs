@@ -5,7 +5,7 @@
  * 
  * Date:2012-04-06
  * 
- * chunk server implements
+ * free chunk management implements
  *
  */
 
@@ -15,6 +15,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
 #include "chunks.h"
@@ -34,8 +35,12 @@ int init_free_chunk(struct free_chunk_list *pfcl, const char *path)
 
 	fd = open(path, O_RDONLY);
 	if (-1 == fd) {
-		perror("init error!\n");
-		return -1;
+		if (errno == EACCES)	//file does not exists!!
+			return 0;
+		else {
+			perror("init free chunk error : ");	//error ocurred when open the file
+			return -1;
+		}
 	}
 	read(fd, pfcl, sizeof(int) * 2);
 	total = pfcl->total_cnt;
@@ -50,15 +55,15 @@ int init_free_chunk(struct free_chunk_list *pfcl, const char *path)
 /**
  * get the first free chunk's position
  *
- *
+ * return : -1 if there is no free chunk or the offset
+ *			indentify the first free chunk
  */
 int get_first_free_chunk(struct free_chunk_list *pfcl)
 {
 	int current = pfcl->current;
 	if (-1 == current)
 		return -1;
-	else
-	{
+	else {
 		--pfcl->current;
 		return free_list(pfcl, current);
 		//return pfcl->base[current >> 11][current & (PER_LIST_SIZE - 1)];
@@ -68,14 +73,20 @@ int get_first_free_chunk(struct free_chunk_list *pfcl)
 /**
  * add one chunk to the list
  *
+ * return 0
  */
 int add_free_chunk(struct free_chunk_list *pfcl, int offset)
 {
 	int total = pfcl->total_cnt;
 	int current = ++pfcl->current;
 	if (current >= total) {
+		unsigned *p = NULL;
 		pfcl->total_cnt += PER_LIST_SIZE;
-		pfcl->base[current >> PER_LIST_OFFSET] = (unsigned *)malloc(sizeof(unsigned) * PER_LIST_SIZE);
+		p = (unsigned *)malloc(sizeof(unsigned) * PER_LIST_SIZE);
+		if (!p)
+			return -1;
+		else
+			pfcl->base[current >> PER_LIST_OFFSET] = p;
 	}
 	free_list(pfcl, current) = offset;
 	//pfcl->base[current >> 11][current & (PER_LIST_SIZE - 1)] = offset;
@@ -90,9 +101,8 @@ int flush_free_chunk(struct free_chunk_list *pfcl, const char *path)
 {
 	int fd, total = pfcl->current, i = 0;
 	fd = open(path, O_WRONLY | O_TRUNC | O_CREAT, 0644);
-	if (fd == -1)
-	{
-		perror("flush error!\n");
+	if (fd == -1) {
+		perror("flush error! : ");
 		return -1;
 	}
 
@@ -100,8 +110,7 @@ int flush_free_chunk(struct free_chunk_list *pfcl, const char *path)
 	total += PER_LIST_SIZE;
 	pfcl->total_cnt = total;
 	write(fd, pfcl, sizeof(int) * 2);
-	for (; total; ++i, total -= PER_LIST_SIZE)
-	{
+	for (; total; ++i, total -= PER_LIST_SIZE) {
 		write(fd, pfcl->base[i], sizeof(unsigned) * PER_LIST_SIZE);
 		free(pfcl->base[i]);
 	}
