@@ -18,10 +18,8 @@
 #include <sys/stat.h>
 
 #include "agilefs-def.h"
-
 #include "chunks.h"
 #include "chunks-io.h"
-
 #include "md5.h"
 //forward declaration of global free_chunk_link struct
 
@@ -36,7 +34,7 @@ char hash[20] = {0};
 int main(int agrc, char **argv)
 {
 	int ret = 0;
-	int i = 0, fd = -1;;
+	int fd = -1;;
 	printf("current process ID is %d\n", (int)getpid());
 	umask(0);
 	ret = meta_server_init("/home/jarvis/agilefs-hash.db");
@@ -53,7 +51,5 @@ int main(int agrc, char **argv)
 	
 	release_chunk_file(&cfi, "global.xml");
 	meta_server_close();
-	puts("pree any key to continue !!");
-	getchar();
 	return 0;
 }

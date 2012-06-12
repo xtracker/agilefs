@@ -8,7 +8,7 @@
 
 struct block_data {
 	int fd_index;
-	int share_num;
+	int ref_count;
 	off_t offset;
 };
 

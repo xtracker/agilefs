@@ -1,6 +1,7 @@
 //#ifdef USE_BERKELEYDB
 #include <string.h>
 #include <db.h>
+#include "agilefs-def.h"
 #include "db_ops.h"
 
 static DB *dbp = NULL; //global BerkeleyDB handle
@@ -18,6 +19,7 @@ int DB_init(const char *db_path)
 	ret = db_create(&dbp, NULL, 0);
 	if (ret)
 		return ret;
+//	dbp->set_cachesize(dbp, (1 << 20));
 	flags = DB_CREATE; // | DB_THREAD;
 	ret = dbp->open(dbp, NULL, db_path, NULL, DB_BTREE, flags, 0664);
 	if (ret)
@@ -43,7 +45,7 @@ int db_put(void *hash, struct block_data *pbd)
 	struct db_data dd;
 	init_DBT(&dd);
 	dd.key.data = hash;
-	dd.key.size = 16;
+	dd.key.size = HASH_SIZE;
 	dd.val.data = pbd;
 	dd.val.size = sizeof(struct block_data);
 	return dbp->put(dbp, NULL, &dd.key, &dd.val, 0);
@@ -58,9 +60,7 @@ int db_get(void *hash, struct block_data *pbd)
 //	dd.key.flags = DB_DBT_USERMEM;
 
 	dd.key.data = hash;
-	dd.key.size = 16;
-//	dd.val.data = pbd;
-//	dd.val.size = sizeof(struct block_data); 
+	dd.key.size = HASH_SIZE;
 	dd.val.data = pbd;
 	dd.val.ulen = sizeof(struct block_data);
 	dd.val.flags = DB_DBT_USERMEM;
