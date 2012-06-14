@@ -21,6 +21,7 @@
 #include "chunks.h"
 #include "chunks-io.h"
 #include "md5.h"
+#include "fuse_io_util.h"
 //forward declaration of global free_chunk_link struct
 
 extern int meta_server_init(const char *db_path);

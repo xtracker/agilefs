@@ -1,4 +1,4 @@
-add_definitions(-D _USE_SHA1)
+#add_definitions(-D _USE_SHA1)
 add_definitions(`pkg-config fuse --cflags`)
 
 
