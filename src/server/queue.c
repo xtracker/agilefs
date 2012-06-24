@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-struct requst_queue {
+struct req_queue_t {
 	int head;
 	int tail;
 	int size;

@@ -1,6 +1,6 @@
 /**
  *
- *	filename :	chunk-io.c
+ *	filename :	chunks-io.c
  *	Author	:	Zhao Guoyu
  *	Date	:	2012-05-30
  *	Descript
@@ -139,7 +139,7 @@ int del_chunk(void *key, struct chunk_file_info *pcfi)
 	struct block_data bd = {0};
 	ret = db_get(key, &bd);
 	if (ret) {
-		if (bd.ref_count> 1) {
+		if (bd.ref_count > 1) {
 			--bd.ref_count;
 			ret = db_put(key, &bd);
 		}

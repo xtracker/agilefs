@@ -1,1 +1,6 @@
-This is the official install guide !!
+This is the official agilefs guide !!
+
+how to install:
+	1.	cd build
+	2. cmake .. && make
+	3. make install
