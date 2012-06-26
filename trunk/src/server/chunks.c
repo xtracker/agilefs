@@ -20,7 +20,6 @@
 #include <errno.h>
 #include "chunks.h"
 
-struct free_chunk_list fcl = {0};	//global free chunk list
 
 /**
  * build free chunk link from file
@@ -33,14 +32,12 @@ int init_free_chunk(struct free_chunk_list *pfcl, const char *path)
 	memset(pfcl, 0, sizeof(struct free_chunk_list));
 	pfcl->current = -1;
 
+	if (access(path, F_OK))		//whether the file exsits
+		return 0;
 	fd = open(path, O_RDONLY);
 	if (-1 == fd) {
-		if (errno == EACCES)	//file does not exists!!
-			return 0;
-		else {
-			perror("init free chunk error : ");	//error ocurred when open the file
-			return -1;
-		}
+		perror("init free chunk error : ");	//error ocurred when open the file
+		return -1;
 	}
 	read(fd, pfcl, sizeof(int) * 2);
 	total = pfcl->total_cnt;

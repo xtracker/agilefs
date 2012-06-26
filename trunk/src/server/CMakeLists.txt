@@ -14,4 +14,4 @@ add_executable (agilefs-server ${SERVER_SRC_LIST})
 
 set (EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 
-target_link_libraries (agilefs-server db expat hash thread-io)
+target_link_libraries (agilefs-server pthread db expat hash thread-io)
