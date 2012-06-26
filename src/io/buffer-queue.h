@@ -22,9 +22,8 @@ typedef struct hash_key {
 struct buffer_queue {
 	sem_t empty, full;
 	pthread_mutex_t mutex;
-	int size;
 	int head, tail;
-	struct hash_key *hq;
+	struct hash_key *hk;
 	struct chunk_data *cd;
 };
 

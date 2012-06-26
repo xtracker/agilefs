@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
 <root>
-	<total count="1"/>
+	<total count="3"/>
 	<file path="/home/jarvis/test/0001.chk" free_list="/home/jarvis/test/0001.fcl"/>
+	<file path="/home/jarvis/test/0002.chk" free_list="/home/jarvis/test/0002.fcl"/>
+	<file path="/home/jarvis/test/0003.chk" free_list="/home/jarvis/test/0003.fcl"/>
 </root>
