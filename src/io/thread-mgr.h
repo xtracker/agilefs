@@ -7,7 +7,6 @@
 #define __THREAD_MGR_H__
 
 
-
 extern int test_get_one_chunk(void *key, char *buf, size_t size);
 
 typedef void *(*thread_fun_type)(void *);
@@ -18,7 +17,7 @@ struct thread_io_operations {
 	int (*get_one_chunk)(void *key, char *buf, size_t size);
 };
 
-struct thread_io_info {
+struct thread_io_context {
 	int producer_threads_num, consumer_threads_num;
 	struct chunk_file_info *cfi;
 	struct buffer_queue *bq;
@@ -26,9 +25,9 @@ struct thread_io_info {
 };
 
 int producer_thread_start(pthread_t *tid, void *(*fn)(void *),
-		struct thread_io_info *tio_info);
+		struct thread_io_context *tio_info);
 int consumer_thread_start(pthread_t *tid, void *(*fn)(void *),
-		struct thread_io_info *tio_info);
+		struct thread_io_context *tio_info);
 
 int thread_io_start();
 #endif

@@ -31,7 +31,7 @@ static struct thread_io_operations tio_ops = {
 	.get_one_chunk = test_get_one_chunk,
 };
 
-struct thread_io_info tio_info = {
+struct thread_io_context tio_info = {
 	.producer_threads_num = 1,
 	.consumer_threads_num = 1,
 	.cfi = &cfi,
@@ -95,7 +95,7 @@ err:
  *
  */
 int producer_thread_start(pthread_t *tid, void *(*fn)(void *),
-		struct thread_io_info *tio_info)
+		struct thread_io_context *tio_info)
 {
 	int ret = 0;
 	pthread_attr_t attr;
@@ -123,7 +123,7 @@ err:
 }
 
 int consumer_thread_start(pthread_t *tid, void *(*fn)(void *),
-		struct thread_io_info *tio_info)
+		struct thread_io_context *tio_info)
 {
 	int ret = 0;
 	pthread_attr_t attr;
@@ -151,7 +151,7 @@ err:
 	return ret;
 }
 
-int thread_io_finalize(struct thread_io_info *tio_info)
+int thread_io_finalize(struct thread_io_context *tio_info)
 {
 	producer_thread_running = 0;
 	consumer_thread_running = 0;
@@ -165,8 +165,8 @@ void *producer_thread_fun(void *arg)
 {
 	int ret = 0;
 	char chunk_data[FSP_SIZE], hash_key[HASH_SIZE];
-	struct buffer_queue *bq = ((struct thread_io_info *)arg)->bq;
-	struct thread_io_operations *tio_ops = ((struct thread_io_info *)arg)->tio_ops;
+	struct buffer_queue *bq = ((struct thread_io_context *)arg)->bq;
+	struct thread_io_operations *tio_ops = ((struct thread_io_context *)arg)->tio_ops;
 
 	while (producer_thread_running) {
 		ret = tio_ops->get_one_chunk(chunk_data, hash_key, FSP_SIZE);
@@ -191,7 +191,7 @@ void *consumer_thread_fun(void *arg)
 	char hash_key[HASH_SIZE];
 	int ret = 0;
 
-	struct thread_io_info *tio_info = (struct thread_io_info *)arg;
+	struct thread_io_context *tio_info = (struct thread_io_context *)arg;
 	struct buffer_queue *bq = tio_info->bq;
 	struct thread_io_operations *tio_ops = tio_info->tio_ops;
 
