@@ -23,7 +23,7 @@
 #include "hash/md5.h"
 #include "fuse_io_util.h"
 
-#include "thread-mgr.h"
+#include "stream/thread-mgr.h"
 //forward declaration of global free_chunk_link struct
 
 extern int meta_server_init(const char *db_path);
