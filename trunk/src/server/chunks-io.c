@@ -25,7 +25,7 @@ extern struct chunk_file_info cfi;
 int get_proper_chunk_file(struct chunk_file_info *pcfi)
 {
 	int ret = -1, i = 0;
-	long __min = 0xffffffffu, capcity, current;
+	long __min = 0xffffffff, capcity, current;
 	for (; i < pcfi->total; ++i) {
 		capcity = pcfi->cur_size[i];
 		current = (long) pcfi->fcls[i].current;

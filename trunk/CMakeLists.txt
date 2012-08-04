@@ -12,4 +12,4 @@ include_directories (
 
 add_subdirectory (src objs)
 
-add_definitions (-Wall)
+add_definitions (-Wall -g)

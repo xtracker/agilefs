@@ -1,3 +1,8 @@
+/**
+ *
+ *
+ *
+ */
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
@@ -9,14 +14,21 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
+#include <assert.h>
 #include "sockio.h"
 
 /**
  *
  */
 
+#ifdef MSG_NOSIGNAL
+#define DEFAULT_MSG_FLAGS MSG_NOSIGNAL
+#else
+#define DEFAULT_MSG_FLAGS 0
+#endif
+
 #ifndef IPPROTO_TCP
-	#define IPPROTO_TCP 0
+#define IPPROTO_TCP 0
 #endif
 
 inline int sockio_new_socket()
@@ -28,7 +40,7 @@ inline int sockio_new_socket()
  *
  *
  */
-int bind_sock(int sockfd, int service)
+int sockio_bind_sock(int sockfd, int service)
 {
 	struct sockaddr_in saddr;
 	bzero(&saddr, sizeof(saddr));
@@ -65,7 +77,7 @@ int sockio_connect_sock(int sockfd, const char *name, int service)
 {
 	int ret = 0;
 	struct sockaddr saddr;
-	ret = sockaddr_init(&saddr, name, service);
+	ret = sockio_sockaddr_init(&saddr, name, service);
 	if (ret < 0)
 		return ret;
 connect_sock_restart:
@@ -133,7 +145,7 @@ int sockio_nbrecv(int sockfd, char *buf, int len)
 		}
 		if (ret == -1 && errno == EINTR)
 			goto nbrecv_restart;
-		else if (ret == -1 && (errno == EAGAIN || errno == WOULDBLOCK))
+		else if (ret == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
 			return len - comp;
 		else if (ret == -1)
 			return (-1);
@@ -154,7 +166,7 @@ int sockio_nbsend(int sockfd, char *buf, int len)
 	while (comp) {
 nbsend_restart:
 		ret = send(sockfd, buf, comp, DEFAULT_MSG_FLAGS);
-		if (ret = 0 || (ret == -1 && errno == WOULDBLOCK))
+		if (ret = 0 || (ret == -1 && errno == EWOULDBLOCK))
 			return len - comp;
 		if (ret == -1 && errno == EINTR)
 			goto nbsend_restart;
