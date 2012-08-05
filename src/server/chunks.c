@@ -25,12 +25,12 @@
  * build free chunk link from file
  *
  */
-int init_free_chunk(struct free_chunk_list *pfcl, const char *path)
+int init_free_chunk(struct free_chunk_list *fclp, const char *path)
 {
 	int fd, total = 0, i = 0;
 
-	memset(pfcl, 0, sizeof(struct free_chunk_list));
-	pfcl->current = -1;
+	memset(fclp, 0, sizeof(struct free_chunk_list));
+	fclp->current = -1;
 
 	if (access(path, F_OK))		//whether the file exsits
 		return 0;
@@ -39,11 +39,11 @@ int init_free_chunk(struct free_chunk_list *pfcl, const char *path)
 		perror("init free chunk error : ");	//error ocurred when open the file
 		return -1;
 	}
-	read(fd, pfcl, sizeof(int) * 2);
-	total = pfcl->total_cnt;
+	read(fd, fclp, sizeof(int) * 2);
+	total = fclp->total_cnt;
 	for (; total; ++i, total -= PER_LIST_SIZE) {
-		pfcl->base[i] = (unsigned *)malloc(sizeof(unsigned) * PER_LIST_SIZE);
-		read(fd, pfcl->base[i], sizeof(unsigned) * PER_LIST_SIZE);
+		fclp->base[i] = (unsigned *)malloc(sizeof(unsigned) * PER_LIST_SIZE);
+		read(fd, fclp->base[i], sizeof(unsigned) * PER_LIST_SIZE);
 	}
 	close(fd);
 	return 0;
@@ -55,15 +55,15 @@ int init_free_chunk(struct free_chunk_list *pfcl, const char *path)
  * return : -1 if there is no free chunk or the offset
  *			indentify the first free chunk
  */
-int get_first_free_chunk(struct free_chunk_list *pfcl)
+int get_first_free_chunk(struct free_chunk_list *fclp)
 {
-	int current = pfcl->current;
+	int current = fclp->current;
 	if (-1 == current)
 		return -1;
 	else {
-		--pfcl->current;
-		return free_list(pfcl, current);
-		//return pfcl->base[current >> 11][current & (PER_LIST_SIZE - 1)];
+		--fclp->current;
+		return free_list(fclp, current);
+		//return fclp->base[current >> 11][current & (PER_LIST_SIZE - 1)];
 	}
 }
 
@@ -72,21 +72,21 @@ int get_first_free_chunk(struct free_chunk_list *pfcl)
  *
  * return 0
  */
-int add_free_chunk(struct free_chunk_list *pfcl, int offset)
+int add_free_chunk(struct free_chunk_list *fclp, int offset)
 {
-	int total = pfcl->total_cnt;
-	int current = ++pfcl->current;
+	int total = fclp->total_cnt;
+	int current = ++fclp->current;
 	if (current >= total) {
 		unsigned *p = NULL;
-		pfcl->total_cnt += PER_LIST_SIZE;
+		fclp->total_cnt += PER_LIST_SIZE;
 		p = (unsigned *)malloc(sizeof(unsigned) * PER_LIST_SIZE);
 		if (!p)
 			return -1;
 		else
-			pfcl->base[current >> PER_LIST_OFFSET] = p;
+			fclp->base[current >> PER_LIST_OFFSET] = p;
 	}
-	free_list(pfcl, current) = offset;
-	//pfcl->base[current >> 11][current & (PER_LIST_SIZE - 1)] = offset;
+	free_list(fclp, current) = offset;
+	//fclp->base[current >> 11][current & (PER_LIST_SIZE - 1)] = offset;
 	return 0;
 }
 
@@ -94,9 +94,9 @@ int add_free_chunk(struct free_chunk_list *pfcl, int offset)
  * flush the free chunk list to file before server shuts down
  *
  */
-int flush_free_chunk(struct free_chunk_list *pfcl, const char *path)
+int flush_free_chunk(struct free_chunk_list *fclp, const char *path)
 {
-	int fd, total = pfcl->current, i = 0;
+	int fd, total = fclp->current, i = 0;
 	fd = open(path, O_WRONLY | O_TRUNC | O_CREAT, 0644);
 	if (fd == -1) {
 		perror("flush error! : ");
@@ -105,11 +105,11 @@ int flush_free_chunk(struct free_chunk_list *pfcl, const char *path)
 
 	total &= ~(PER_LIST_SIZE - 1);
 	total += PER_LIST_SIZE;
-	pfcl->total_cnt = total;
-	write(fd, pfcl, sizeof(int) * 2);
+	fclp->total_cnt = total;
+	write(fd, fclp, sizeof(int) * 2);
 	for (; total; ++i, total -= PER_LIST_SIZE) {
-		write(fd, pfcl->base[i], sizeof(unsigned) * PER_LIST_SIZE);
-		free(pfcl->base[i]);
+		write(fd, fclp->base[i], sizeof(unsigned) * PER_LIST_SIZE);
+		free(fclp->base[i]);
 	}
 	close(fd);
 
@@ -117,8 +117,8 @@ int flush_free_chunk(struct free_chunk_list *pfcl, const char *path)
 }
 
 //just used in debug mode
-void printinfo(struct free_chunk_list *pfcl)
+void printinfo(struct free_chunk_list *fclp)
 {
-	printf("total_cnt = %d\ncurrent = %d\n", pfcl->total_cnt, pfcl->current);
+	printf("total_cnt = %d\ncurrent = %d\n", fclp->total_cnt, fclp->current);
 }
 

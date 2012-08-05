@@ -11,7 +11,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
+#include <assert.h>
 #include <sys/types.h>
 #include <fcntl.h>
 
@@ -22,13 +24,13 @@
 
 extern struct chunk_file_info cfi;
 
-int get_proper_chunk_file(struct chunk_file_info *pcfi)
+int get_proper_chunk_file(struct chunk_file_info *cfip)
 {
 	int ret = -1, i = 0;
 	long __min = 0xffffffff, capcity, current;
-	for (; i < pcfi->total; ++i) {
-		capcity = pcfi->cur_size[i];
-		current = (long) pcfi->fcls[i].current;
+	for (; i < cfip->total; ++i) {
+		capcity = cfip->cur_size[i];
+		current = (long) cfip->fcls[i].current;
 		capcity -= (current == -1 ? 0 : (current << FSP_OFFSET));
 		if (capcity < MAX_CHUNK_FILE_SIZE && __min > capcity)
 			__min = capcity, ret = i;
@@ -43,30 +45,31 @@ int get_proper_chunk_file(struct chunk_file_info *pcfi)
  * return	: the size of data wrtien to file
  *				otherwise -1
  */
-int block_write(void *key, const char *buf, size_t size,
-		struct chunk_file_info *pcfi)
+int block_write(void *key,
+		const char *buf,
+		size_t size,
+		struct chunk_file_info *cfip)
 {
-	int ret = 0, fd_index = -1;
+	int ret = 0, fd_index;
 	long offset = 0;
-	struct free_chunk_list *pfcl = NULL;
+	struct free_chunk_list *fclp = NULL;
 	
-	fd_index = get_proper_chunk_file(pcfi);
-	if (fd_index == -1)
-		return -1;
+	fd_index = get_proper_chunk_file(cfip);
+	assert(fd_index >= 0);
 	
-	pfcl = &pcfi->fcls[fd_index];
-	ret = get_first_free_chunk(pfcl);
+	fclp = &cfip->fcls[fd_index];
+	ret = get_first_free_chunk(fclp);
 
 	if (ret == -1) {
-		offset = pcfi->cur_size[fd_index];
-		pcfi->cur_size[fd_index] += FSP_SIZE;
+		offset = cfip->cur_size[fd_index];
+		cfip->cur_size[fd_index] += FSP_SIZE;
 	}
 	else {
 		offset = (((off_t)ret) << FSP_OFFSET);
 	}
 
 //	printf("write to %d offset is %d\n", fd_index, offset);
-	ret = pwrite(pcfi->fds[fd_index], buf, size, offset);
+	ret = pwrite(cfip->fds[fd_index], buf, size, offset);
 	
 	if (ret == FSP_SIZE) {
 		int x = write_hash_db(key, offset, fd_index);
@@ -84,7 +87,7 @@ int block_write(void *key, const char *buf, size_t size,
  *	return	:	size of data read, otherwise -1
  */
 int block_read(void *key, char *buf, size_t size,
-		struct chunk_file_info *pcfi)
+		struct chunk_file_info *cfip)
 {
 	int ret = 0, fd = -1;
 	struct block_data bd = { 0 };
@@ -95,7 +98,7 @@ int block_read(void *key, char *buf, size_t size,
 		return -1;
 	}
 	printf("read share_num is %d\n", bd.ref_count);
-	fd = pcfi->fds[bd.fd_index];
+	fd = cfip->fds[bd.fd_index];
 	ret = pread(fd, buf, size, bd.offset);
 	return ret;
 }
@@ -107,13 +110,13 @@ int block_read(void *key, char *buf, size_t size,
  *
  */
 int put_new_chunk(void *key, const char *buf, size_t size,
-		struct chunk_file_info *pcfi)
+		struct chunk_file_info *cfip)
 {
 	int ret = 0;
 	struct block_data bd = {0};
 	ret = db_get(key, &bd);
 	if (ret) {
-		ret = block_write(key, buf, size, pcfi);
+		ret = block_write(key, buf, size, cfip);
 		ret = (ret == FSP_SIZE ? 0 : -1);
 	}
 	else {
@@ -133,7 +136,7 @@ int put_new_chunk(void *key, const char *buf, size_t size,
  *
  *
  */
-int del_chunk(void *key, struct chunk_file_info *pcfi)
+int del_chunk(void *key, struct chunk_file_info *cfip)
 {
 	int ret = 0;
 	struct block_data bd = {0};
@@ -144,7 +147,7 @@ int del_chunk(void *key, struct chunk_file_info *pcfi)
 			ret = db_put(key, &bd);
 		}
 		else {
-			add_free_chunk(&pcfi->fcls[bd.fd_index], (unsigned)(bd.offset >> FSP_OFFSET));
+			add_free_chunk(&cfip->fcls[bd.fd_index], (unsigned)(bd.offset >> FSP_OFFSET));
 			ret = db_del(key);
 		}
 	}

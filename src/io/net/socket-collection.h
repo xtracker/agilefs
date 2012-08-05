@@ -12,8 +12,8 @@
 #define EPOLL_MAX_PER_CYCLE 16
 
 struct socket_collection {
-	int epfd;
 	int server_socket;
+	int epfd;
 	struct epoll_event evnet_array[EPOLL_MAX_PER_CYCLE];
 };
 

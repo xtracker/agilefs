@@ -7,7 +7,7 @@
 #define __EXPAT_XML_H_
 
 struct chunk_file_info_xml {
-	struct chunk_file_info *pcfi;
+	struct chunk_file_info *cfip;
 	int i, depth;
 	void XMLCALL (*start)(void *, const char *, const char **);
 };

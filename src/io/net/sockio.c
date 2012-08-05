@@ -178,3 +178,51 @@ nbsend_restart:
 	}
 	return len - comp;
 }
+
+int sockio_nbvector(int sockfd, struct iovec *vector, int count, int recv_flag)
+{
+	int ret = 0;
+	do {
+		if (recv_flag)
+			ret = readv(sockfd, vector, count);
+		else
+			ret = writev(sockfd, vector, count);
+	} while (ret == -1 && errno == EINTR);
+
+	if (ret == -1 && errno == EWOULDBLOCK)
+		return 0;
+	
+	return ret;
+}
+
+int sockio_get_sockopt(int sockfd, int optname)
+{
+	int val;
+	socklen_t len = sizeof(val);
+	if (getsockopt(sockfd, SOL_SOCKET, optname, &val, &len) == -1)
+		return (-1);
+	else
+		return val;
+}
+
+int sockio_set_tcpopt(int sockfd, int optname, int val)
+{
+	if (setsockopt(sockfd, IPPROTO_TCP, optname, &val, sizeof(val)) == -1)
+		return (-1);
+	else
+		return val;
+}
+
+
+int sockio_set_sockopt(int sockfd, int optname, int val)
+{
+	if (setsockopt(sockfd, SOL_SOCKET, optname, &val, sizeof(val)) == -1)
+		return -1;
+	else
+		return val;
+}
+
+/**
+ *
+ *
+ */

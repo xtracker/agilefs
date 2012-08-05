@@ -15,6 +15,8 @@ int main()
 		perror("bind error");
 	if (listen(sockfd, 5) < 0)
 		perror("listen error");
+	if (sockio_connect_sock(sockfd, "192.168.5.74", 8800) < 0)
+		perror("connect error:");
 	while (1) {
 		printf("wogan\n");
 		sock_in = accept(sockfd, &saddr, &len);

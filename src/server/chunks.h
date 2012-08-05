@@ -22,14 +22,18 @@ struct free_chunk_list { //free chunks table
 };
 
 //free chunk list operations
-#define free_list(pfcl, current) \
-	(pfcl)->base[(current) >> PER_LIST_OFFSET][(current) & PER_LIST_SIZE]
+#define free_list(fclp, current) \
+	(fclp)->base[(current) >> PER_LIST_OFFSET][(current) & PER_LIST_SIZE]
 
-void printinfo(struct free_chunk_list *pfcl);
-int init_free_chunk(struct free_chunk_list *pfcl, const char *path);
-int flush_free_chunk(struct free_chunk_list *pfcl, const char *path);
-int add_free_chunk(struct free_chunk_list *pfcl, int offset);
-int get_first_free_chunk(struct free_chunk_list *pfcl);
+void printinfo(struct free_chunk_list *fclp);
+
+int init_free_chunk(struct free_chunk_list *fclp, const char *path);
+
+int flush_free_chunk(struct free_chunk_list *fclp, const char *path);
+
+int add_free_chunk(struct free_chunk_list *fclp, int offset);
+
+int get_first_free_chunk(struct free_chunk_list *fclp);
 
 struct chunk_file_info {
 	int total;	
@@ -40,4 +44,6 @@ struct chunk_file_info {
 
 int init_chunk_file(struct chunk_file_info *base, const char *path);
 int release_chunk_file(struct chunk_file_info *base, const char *path);
+
+
 #endif //#ifdef _CHUNKS_H_
