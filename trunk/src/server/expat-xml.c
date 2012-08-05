@@ -33,45 +33,45 @@
 
 static void XMLCALL start_element_init(void *user_data, const char *name, const char **atts)
 {
-	struct chunk_file_info_xml *pcfix = (struct chunk_file_info_xml *)user_data;
+	struct chunk_file_info_xml *cfixp = (struct chunk_file_info_xml *)user_data;
 	if (!strcmp(name, "total"))	{
 		int total = atoi(atts[1]);
-		pcfix->pcfi->total = total;
-		pcfix->pcfi->fcls = (struct free_chunk_list *)malloc(sizeof(struct free_chunk_list) * total);
-		pcfix->pcfi->fds = (int *)malloc(sizeof(int) * total);
-		pcfix->pcfi->cur_size = (long *)malloc(sizeof(long) * total);
+		cfixp->cfip->total = total;
+		cfixp->cfip->fcls = (struct free_chunk_list *)malloc(sizeof(struct free_chunk_list) * total);
+		cfixp->cfip->fds = (int *)malloc(sizeof(int) * total);
+		cfixp->cfip->cur_size = (long *)malloc(sizeof(long) * total);
 	}
 	else if (!strcmp(name, "file"))	{
 		struct stat statbuf;
 		int ret = open(atts[1], O_RDWR | O_CREAT, 0644);
-		pcfix->pcfi->fds[pcfix->i] = ret;
+		cfixp->cfip->fds[cfixp->i] = ret;
 		ret = fstat(ret, &statbuf);
-		pcfix->pcfi->cur_size[pcfix->i] = statbuf.st_size;
-		init_free_chunk(pcfix->pcfi->fcls + pcfix->i, atts[3]);
-		++pcfix->i;
+		cfixp->cfip->cur_size[cfixp->i] = statbuf.st_size;
+		init_free_chunk(cfixp->cfip->fcls + cfixp->i, atts[3]);
+		++cfixp->i;
 	}
-	++pcfix->depth;
+	++cfixp->depth;
 }
 
 static void XMLCALL start_element_release(void *user_data, const char *name, const char **atts)
 {
-	struct chunk_file_info_xml *pcfix = (struct chunk_file_info_xml *)user_data;
+	struct chunk_file_info_xml *cfixp = (struct chunk_file_info_xml *)user_data;
 
 	if (!strcmp(name, "file")) {
-		close(pcfix->pcfi->fds[pcfix->i]);
-		flush_free_chunk(pcfix->pcfi->fcls + pcfix->i, atts[3]);
-		++pcfix->i;
+		close(cfixp->cfip->fds[cfixp->i]);
+		flush_free_chunk(cfixp->cfip->fcls + cfixp->i, atts[3]);
+		++cfixp->i;
 	}
-	++pcfix->depth;
+	++cfixp->depth;
 }
 
 static void XMLCALL end_element(void *user_data, const char *name)
 {
-	struct chunk_file_info_xml *pcfix = (struct chunk_file_info_xml *)user_data;
-	--pcfix->depth;
+	struct chunk_file_info_xml *cfixp = (struct chunk_file_info_xml *)user_data;
+	--cfixp->depth;
 }
 
-static int chunk_file_parser(const char *xmlpath, struct chunk_file_info_xml *pcfix)
+static int chunk_file_parser(const char *xmlpath, struct chunk_file_info_xml *cfixp)
 {
 	int done;
 	char buf[BUFSIZ];
@@ -81,8 +81,8 @@ static int chunk_file_parser(const char *xmlpath, struct chunk_file_info_xml *pc
 		return -1;
 	}
 	XML_Parser parser = XML_ParserCreate(NULL);
-	XML_SetUserData(parser, pcfix);
-	XML_SetElementHandler(parser, pcfix->start, end_element);
+	XML_SetUserData(parser, cfixp);
+	XML_SetElementHandler(parser, cfixp->start, end_element);
 	do {
 		int len = (int)fread(buf, 1, sizeof(buf), fp);
 		done = len < sizeof(buf);
@@ -102,7 +102,7 @@ static int chunk_file_parser(const char *xmlpath, struct chunk_file_info_xml *pc
 int init_chunk_file(struct chunk_file_info *base, const char *path)
 {
 	struct chunk_file_info_xml cfix = {
-		.pcfi = base,
+		.cfip = base,
 		.i = 0,
 		.depth = 0,
 		.start = start_element_init
@@ -113,7 +113,7 @@ int init_chunk_file(struct chunk_file_info *base, const char *path)
 int release_chunk_file(struct chunk_file_info *base, const char *path)
 {
 	struct chunk_file_info_xml cfix = {
-		.pcfi = base,
+		.cfip = base,
 		.i = 0,
 		.depth = 0,
 		.start = start_element_release
