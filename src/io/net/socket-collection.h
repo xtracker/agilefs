@@ -14,7 +14,7 @@
 struct socket_collection {
 	int server_socket;
 	int epfd;
-	struct epoll_event evnet_array[EPOLL_MAX_PER_CYCLE];
+	struct epoll_event event_array[EPOLL_MAX_PER_CYCLE];
 };
 
 typedef struct socket_collection *socket_collection_p;

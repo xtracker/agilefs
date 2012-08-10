@@ -1,5 +1,6 @@
 /**
- *
+ * filename	:	socket-collection.c
+ * Author	:	Zhao Guoyu
  *
  *
  *
@@ -12,9 +13,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <assert.h>
 
 #include "socket-collection.h"
+
 #ifdef __USE_LINUX_EPOLL
+#define EPOLL_ERR_MASK (EPOLLERR | EPOLLHUP)
 #define EPOLL_CREATE_SIZE 32
 #endif
 
@@ -55,6 +59,7 @@ socket_collection_p socket_collection_init(int server_socket)
 
 void socket_collection_finalize(socket_collection_p scp)
 {
+	assert(scp != NULL);
 	free(scp);
 	return;
 }

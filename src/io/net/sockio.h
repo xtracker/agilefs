@@ -11,18 +11,26 @@
 #include <netdb.h>
 #include <fcntl.h>
 
-int sockio_new_sock();
+inline int sockio_new_sock();
+
 int sockio_bind_sock(int sockfd,
 		int service);
+
 int sockio_connect_sock(int sockfd,
 		const char *name,
 		int service);
+
 int sockio_sockaddr_init(struct sockaddr *saddrp,
 		const char *name,
 		int service);
+
 int sockio_nbrecv(int sockfd,
 		char *buf,
 		int len);
+int sockio_nbsend(int sockfd,
+		char *buf,
+		int len);
+
 int sockio_nbvector(int sockfd,
 		struct iovec * vector,
 		int count,
