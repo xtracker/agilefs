@@ -1,14 +1,14 @@
-
 cmake_minimum_required (VERSION 2.8)
 
-project (AGILEFS)
+project (agilefs)
 
 include_directories (
 	${PROJECT_SOURCE_DIR}/include
 	${PROJECT_SOURCE_DIR}/src/client 
 	${PROJECT_SOURCE_DIR}/src/io
 	${PROJECT_SOURCE_DIR}/src/server
-	${PROJECT_SOURCE_DIR}/src/common)
+	${PROJECT_SOURCE_DIR}/src/common
+	${PROJECT_SOURCE_DIR}/src/common/encrypt)
 
 add_subdirectory (src objs)
 

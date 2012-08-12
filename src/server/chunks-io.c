@@ -141,13 +141,18 @@ int del_chunk(void *key, struct chunk_file_info *cfip)
 	int ret = 0;
 	struct block_data bd = {0};
 	ret = db_get(key, &bd);
+	
 	if (ret) {
+		
 		if (bd.ref_count > 1) {
 			--bd.ref_count;
 			ret = db_put(key, &bd);
 		}
+		
 		else {
-			add_free_chunk(&cfip->fcls[bd.fd_index], (unsigned)(bd.offset >> FSP_OFFSET));
+			add_free_chunk(&cfip->fcls[bd.fd_index],
+					(unsigned)(bd.offset >> FSP_OFFSET));
+			
 			ret = db_del(key);
 		}
 	}

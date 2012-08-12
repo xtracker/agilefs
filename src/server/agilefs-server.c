@@ -20,7 +20,7 @@
 #include "agilefs-def.h"
 #include "chunks.h"
 #include "chunks-io.h"
-#include "hash/md5.h"
+#include "md5.h"
 #include "fuse_io_util.h"
 
 #include "thread-mgr.h"

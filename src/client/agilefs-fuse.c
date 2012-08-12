@@ -27,12 +27,21 @@
 #ifdef HAVE_SETXATTR
 #include <sys/xattr.h>
 #endif
-#include "hash/sha1.h"
+
+#include "agilefs-def.h"
+
+#ifdef __USE_SHA1
+#include "sha1.h"
+#else
+#include "md5.h"
+#endif
+
 #include "fuse_type.h"
 #include "fuse_io_util.h"
 #include "fuse_cache.h"
 
 #define BLOCK_SIZE 4096
+
 off_t g_block_size = BLOCK_SIZE; //64K=0x10000
 off_t init_offset = 16;
 
