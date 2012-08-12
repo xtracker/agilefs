@@ -28,5 +28,12 @@ inline void do_hash(void *input, int length, void *output)
 #endif
 }
 
+struct meta_file_context {
+	int fd;
+	off_t st_size;
+};
+
+typedef struct meta_file_context *meta_file_context_p;
+
 #endif /* FUSE_TEST_H_ */
 
