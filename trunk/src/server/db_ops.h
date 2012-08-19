@@ -16,7 +16,8 @@ struct block_data {
 };
 
 int DB_init(const char *db_path);
-int DB_clean();
+
+int DB_clean(int cnt);
 
 int db_put(void *hash, struct block_data *pmd);
 

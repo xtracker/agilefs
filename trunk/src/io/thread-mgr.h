@@ -20,11 +20,13 @@ struct thread_io_operations {
 
 struct thread_io_context {
 	int producer_threads_num, consumer_threads_num;
+	pthread_t *tids;
 	struct chunk_file_info *cfi;
 	struct buffer_queue *bqs;
 	struct thread_io_operations *tio_ops;
 };
-
+typedef struct thread_io_context thread_io_context_t;
+typedef struct thread_io_context *thread_io_context_p;
 
 int producer_thread_start(pthread_t *tid, void *(*fn)(void *),
 		struct thread_io_context *tio_info);

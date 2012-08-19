@@ -12,12 +12,14 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <errno.h>
+#include <assert.h>
 
 #include "agilefs-def.h"
 #include "chunks-io.h"
 #include "thread-mgr.h"
-
 #include "buffer-queue.h"
+
 extern int over;
 
 static struct buffer_queue bq_array[NUM_BUFFER_QUEUES];
@@ -36,7 +38,7 @@ static struct thread_io_operations tio_ops = {
 	.get_one_chunk = test_get_one_chunk,
 };
 
-struct thread_io_context tio_info = {
+static struct thread_io_context tio_info = {
 	.producer_threads_num = 1,
 	.consumer_threads_num = NUM_SERVER_THREADS,
 	.cfi = &cfi,
@@ -44,6 +46,29 @@ struct thread_io_context tio_info = {
 	/** bq = **/
 	.tio_ops = &tio_ops,
 };
+
+static struct thread_io_context *tio_info_p = NULL;
+
+static thread_io_context_p thread_io_context_init(int server_threads)
+{
+	struct thread_io_context *tmp_tiocp;
+	tmp_tiocp = (struct thread_io_context *) malloc(sizeof(struct thread_io_context));
+	
+	if (tmp_tiocp == NULL)
+		return NULL;
+	
+	tmp_tiocp->producer_threads_num = 1;
+	tmp_tiocp->consumer_threads_num = NUM_SERVER_THREADS;
+	
+	tmp_tiocp->bqs = (struct buffer_queue *) malloc(sizeof(struct buffer_queue) * NUM_BUFFER_QUEUES);
+
+
+	if (!tmp_tiocp->bqs) {
+		free(tmp_tiocp);
+		return NULL;
+	}
+	return tmp_tiocp;
+}
 
 int thread_io_start(void)
 {
@@ -63,8 +88,9 @@ int thread_io_start(void)
 		if (ret)
 			return ret;
 	}
+	tio_info.tids = (pthread_t *) malloc(sizeof(pthread_t) * NUM_SERVER_THREADS);
 	for (i = 0; i < c_count; ++i) {
-		ret = consumer_thread_start(&consumer_id, NULL, (void *) (long)i);
+		ret = consumer_thread_start(&tio_info.tids[i], NULL, (void *)(unsigned long)i);
 		if (ret)
 			return ret;
 	}
@@ -88,9 +114,10 @@ int init_buffer_queue(struct buffer_queue *bq)
 {
 	int ret = 0;
 	bq->head = 0, bq->tail = 0;
+	ret = pthread_mutex_init(&bq->mutex, NULL);
 	if (ret)
 		return ret;
-	ret = pthread_mutex_init(&bq->mutex, NULL);
+
 	ret = sem_init(&bq->empty, 0, BUFF_QUEUE_SIZE);
 	if (ret)
 		goto err;
@@ -101,6 +128,10 @@ int init_buffer_queue(struct buffer_queue *bq)
 	bq->cd = (chunk_data_t *) malloc(BUFF_QUEUE_SIZE * sizeof(chunk_data_t));
 	if (bq->hk && bq->cd)
 		return 0;
+	else {
+		perror("malloc memory for buffer queue failed :");
+		return (-errno);
+	}
 malloc_err:
 	sem_destroy(&bq->full);
 full_init_err:
@@ -132,10 +163,9 @@ int producer_thread_start(pthread_t *tid, void *(*fn)(void *),
 		ret = pthread_create(tid, &attr, default_producer_fun, tio_info);
 	else
 		ret = pthread_create(tid, &attr, fn, tio_info);
-	if (!ret) {
-		return 0;
-	} else
+	if (ret != 0) {
 		producer_thread_running = 0;
+	}
 
 set_attr_err:
 	pthread_attr_destroy(&attr);
@@ -161,9 +191,7 @@ int consumer_thread_start(pthread_t *tid, void *(*fn)(void *),
 	
 	ret = pthread_create(tid, &attr, fn, tio_info);
 	
-	if (!ret) {
-		return 0;
-	} else
+	if (ret != 0)
 		consumer_thread_running = 0;
 
 set_attr_err:

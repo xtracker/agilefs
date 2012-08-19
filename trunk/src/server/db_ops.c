@@ -4,6 +4,7 @@
  * Date:	2012
  *
  */
+
 #include <string.h>
 #include <db.h>
 #include <stdio.h>
@@ -18,13 +19,7 @@
 extern "C" {
 #endif
 
-static inline hash_to_index(void *key)
-{
-	int i = (int)key;
-	return i % NUM_SERVER_DBS;
-}
  
-
 /** global db environment handle **/
 static DB_ENV *g_db_env = NULL;	
 /** global db handles array **/

@@ -30,10 +30,10 @@
 /**
  * global definitions
  */
-#ifdef __x86_64__
-typedef long loff_t;
-#else
-typedef long long loff_t;
+
+#if !defined hash_to_index
+#define hash_to_index(hash_key) \
+	*((int *)hash_key)
 #endif
 
 #endif

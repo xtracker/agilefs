@@ -11,6 +11,10 @@
 #include <pthread.h>
 #include <semaphore.h>
 
+#ifdef __cpluscplus
+extern "C" {
+#endif
+
 #define BUFF_QUEUE_SIZE 8
 
 typedef struct chunk_data {	
@@ -31,4 +35,8 @@ struct buffer_queue {
 
 typedef struct buffer_queue buffer_queue_t;
 typedef struct buffer_queue *buffer_queue_p;
+
+#ifdef __cpluscplus
+}
+#endif /** __cpluscplus **/
 #endif	//ops-queue.h

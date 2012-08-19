@@ -11,6 +11,7 @@
 #include <assert.h>
 
 #include "agilefs-def.h"
+#include "direct-ios.h"
 #include "space-immu.h"
 
 
