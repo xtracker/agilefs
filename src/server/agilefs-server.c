@@ -41,21 +41,23 @@ int test_get_one_chunk(void *key, char *buf, size_t size)
 {
 	int ret = read(fd, buf, FSP_SIZE);
 	if (ret > 0) {
-		md5(buf, HASH_SIZE, key);
+		md5((unsigned char *)buf, HASH_SIZE, key);
 	}
 	return ret;
 }
 
 int main(int agrc, char **argv)
 {
-	int ret = 0;
+	int ret;
 	printf("current process ID is %d\n", (int)getpid());
 	umask(0);
-	ret = meta_server_init("/home/jarvis/agilefs-hash.db");
+	ret = meta_server_init("/home/jarvis/agilefs-db");
 	ret = init_chunk_file(&cfi, "/home/jarvis/global.xml");
 	system("date");
 	fd = open(argv[1], O_RDONLY);	
 	ret = thread_io_start();
+	if (ret != 0)
+		
 	while (!over);
 	system("date");
 	close(fd);

@@ -86,7 +86,6 @@ int add_free_chunk(struct free_chunk_list *fclp, int offset)
 			fclp->base[current >> PER_LIST_OFFSET] = p;
 	}
 	free_list(fclp, current) = offset;
-	//fclp->base[current >> 11][current & (PER_LIST_SIZE - 1)] = offset;
 	return 0;
 }
 
