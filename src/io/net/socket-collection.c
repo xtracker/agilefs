@@ -59,8 +59,8 @@ socket_collection_p socket_collection_init(int server_socket)
 
 void socket_collection_finalize(socket_collection_p scp)
 {
-	assert(scp != NULL);
-	free(scp);
+	if (scp)
+		free(scp);
 	return;
 }
 

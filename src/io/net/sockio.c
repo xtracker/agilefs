@@ -31,7 +31,7 @@
 #define IPPROTO_TCP 0
 #endif
 
-inline int sockio_new_socket()
+int sockio_new_socket()
 {
 	return socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 }
