@@ -15,6 +15,9 @@
 #include "socket-collection.h"
 #include "tcp.h"
 
+char *srv_ip_list[] = {"192.168.5.74", "192.168.5.83"};
+short client_ports[] = {8000, 8001, 8002};
+
 static struct socket_collection *scp = NULL;
 
 struct tcp_addr server_tcp_addr;
@@ -26,6 +29,10 @@ int tcp_initialize(tcp_addr_p listen_addr, int flags)
 	int retval = 0;
 	if (flags & TCP_SERVER_INIT) {
 		retval = tcp_server_init();
+		if (retval < 0) {
+			fprintf(stderr, "tcp_initialize failed: %s\n", strerror(retval));
+			return retval;
+		}
 		scp = socket_collection_init(listen_addr->socket);
 		if (!scp)
 			return (-1);
@@ -61,4 +68,9 @@ static int tcp_server_init()
 		return -errno;
 	return 0;
 
+}
+
+static int tcp_client_init()
+{
+	return (0);
 }
