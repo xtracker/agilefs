@@ -15,13 +15,6 @@ extern struct chunk_file_info cfi;
 
 struct space_context {
 	struct chunk_file_info *cfip;
-	union {
-		unsigned int bitmap;
-		struct {
-			unsigned int bits : 1[32];
-		};
-	}fd_bitmap;
-
 };
 
 typedef struct space_context *space_context_p;

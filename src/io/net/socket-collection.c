@@ -45,7 +45,7 @@ socket_collection_p socket_collection_init(int server_socket)
 	if (server_socket > -1) {
 		memset(&event, 0, sizeof(event));
 		event.events = (EPOLLIN | EPOLLOUT | EPOLLHUP);
-		event.data.ptr = NULL;
+		event.data.ptr = NULL;	/* or event.data.prt = server_socket */
 		ret = epoll_ctl(tscp->epfd, EPOLL_CTL_ADD, server_socket, &event);
 		if (ret < 0 && errno != EEXIST) {
 			perror("epoll control add failure:");

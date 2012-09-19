@@ -11,7 +11,7 @@
 
 
 struct tcp_addr {
-	int sockfd;
+	int socket;
 	int port;
 	char *host;
 	int server_port;

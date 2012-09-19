@@ -456,7 +456,7 @@ read_err:
  * @return the actual count of bytes writen to the file or errno if error occurs
  */
 static int fuse_write(const char *path, const char *buf, size_t size,
-		     off_t offset, struct fuse_file_info *fi)
+		off_t offset, struct fuse_file_info *fi)
 {
 	int		fd, bfd;
 	int		res = 0;
@@ -680,5 +680,10 @@ int main(int argc, char *argv[])
 	freopen("/root/jarvis/log_out.txt","w+",stdout);
 #endif
 	umask(0);
+
+#if FUSE_VERSION >= 26
 	return fuse_main(argc, argv, &fuse_oper, NULL);
+#else
+	return fuse_main(argc, argv, &fuse_oper);
+#endif
 }

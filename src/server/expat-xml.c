@@ -37,7 +37,8 @@ static void XMLCALL start_element_init(void *user_data, const char *name, const 
 	if (!strcmp(name, "total"))	{
 		int total = atoi(atts[1]);
 		cfixp->cfip->total = total;
-		cfixp->cfip->fcls = (struct free_chunk_list *)malloc(sizeof(struct free_chunk_list) * total);
+		cfixp->cfip->fcls = (struct free_chunk_list *)
+			malloc(sizeof(struct free_chunk_list) * total);
 		cfixp->cfip->fds = (int *)malloc(sizeof(int) * total);
 		cfixp->cfip->cur_size = (long *)malloc(sizeof(long) * total);
 	}

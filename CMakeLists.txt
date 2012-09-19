@@ -8,7 +8,9 @@ include_directories (
 	${PROJECT_SOURCE_DIR}/src/io
 	${PROJECT_SOURCE_DIR}/src/server
 	${PROJECT_SOURCE_DIR}/src/common
-	${PROJECT_SOURCE_DIR}/src/common/encrypt)
+	${PROJECT_SOURCE_DIR}/src/common/encrypt
+	${PROJECT_SOURCE_DIR}/src/common/quicklist
+	${PROJECT_SOURCE_DIR}/src/common/quickhash)
 
 add_subdirectory (src objs)
 
