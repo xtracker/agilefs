@@ -1,5 +1,6 @@
 add_definitions (-D__USE_LINUX_EPOLL)
 set (NET_SRC_LISTS
+	tcp.h tcp.c
 	sockio.h sockio.c
 	socket-collection.h socket-collection.c)
 
