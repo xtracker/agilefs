@@ -24,6 +24,14 @@ void socket_collection_finalize(socket_collection_p scp);
 
 #define socket_collection_add(m, s)	\
 	do { \
+		struct tcp_addr* tcp_data = (m); \
+		if(tcp_data->socket > -1){ \
+			struct epoll_event event;\
+			memset(&event, 0, sizeof(event));\
+			event.events = EPOLLIN|EPOLLERR|EPOLLHUP;\
+			event.data.ptr = NULL;\
+			epoll_ctl(s->epfd, EPOLL_CTL_ADD, tcp_data->socket, &event);\
+		}\
 	} while (0);
 
 #define socket_collection_remove(m, s) \

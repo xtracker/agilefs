@@ -11,7 +11,7 @@
 #include <netdb.h>
 #include <fcntl.h>
 
-inline int sockio_new_sock();
+int sockio_new_sock();
 
 int sockio_bind_sock(int sockfd,
 		int service);

@@ -1,7 +1,7 @@
 /**
- *
- *
- *
+ * file:	sockio.h
+ * Author:	jarvis
+ * Date:	2012
  */
 #include <unistd.h>
 #include <stdio.h>
@@ -213,7 +213,6 @@ int sockio_set_tcpopt(int sockfd, int optname, int val)
 		return val;
 }
 
-
 int sockio_set_sockopt(int sockfd, int optname, int val)
 {
 	if (setsockopt(sockfd, SOL_SOCKET, optname, &val, sizeof(val)) == -1)
@@ -226,3 +225,4 @@ int sockio_set_sockopt(int sockfd, int optname, int val)
  *
  *
  */
+

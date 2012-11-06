@@ -9,11 +9,10 @@
 #include "quicklist.h"
 #include "quickhash.h"
 
-
 struct tcp_addr {
 	int socket;
 	int port;
-	char *host;
+	char *hostname;
 	int server_port;
 	int is_connected;
 	struct qlist_head qlist_entry;

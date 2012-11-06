@@ -37,3 +37,6 @@
 #endif
 
 #endif
+
+
+#define NUM_SERVERS 2

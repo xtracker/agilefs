@@ -64,6 +64,15 @@ void socket_collection_finalize(socket_collection_p scp)
 	return;
 }
 
+/**
+ * func
+ * @param socket collection handle
+ * @param size of input array
+ * @param actual size of output
+ * @param time out 
+ * @return 0 on successful, -1 on errors
+ */
+
 int socket_collection_testglobal(socket_collection_p scp,
 		int incount,
 		int *outcount,

@@ -8,6 +8,7 @@
 #ifndef FUSE_TYPE_H_
 #define FUSE_TYPE_H_
 
+#include "quickhash.h"
 
 typedef unsigned char u_byte;				//byte
 
