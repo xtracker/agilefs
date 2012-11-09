@@ -1,7 +1,8 @@
 /**
- * tcp.c
- * jarvis
- * 2012-10-04
+ * file:	tcp.c
+ * author:	jarvis
+ * date:	2012-10-04
+ * description:
  */
 
 #include <unistd.h>
@@ -90,7 +91,6 @@ static int tcp_server_init()
 	if (listen(srv_tcp_addrp->socket, 256) != 0)		//start listening
 		return -errno;
 	return 0;
-
 }
 
 /**

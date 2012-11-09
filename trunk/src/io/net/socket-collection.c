@@ -1,10 +1,11 @@
 /**
  * filename	:	socket-collection.c
- * Author	:	Zhao Guoyu
+ * Author	:	Zhao Guoyu jarvis.xera@gmail.com
  *
  *
  *
  */
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/epoll.h>

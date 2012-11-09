@@ -1,6 +1,8 @@
 /**
- *
- *
+ * file:	socket-collection.h
+ * author:	zhaoguoyu
+ * date:	2012-06-01
+ * header file of socket collections
  */
 
 #ifndef __SOCKET_COLLECTION_H__

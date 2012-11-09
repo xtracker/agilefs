@@ -23,7 +23,7 @@
  * server configurations
  */
 #define MAX_CHUNK_FILE_SIZE (1L << 32)
-#define NUM_SERVER_THREADS 4
+#define NUM_SERVER_THREADS 1
 #define NUM_BUFFER_QUEUES NUM_SERVER_THREADS
 #define NUM_SERVER_DBS NUM_SERVER_THREADS
 
