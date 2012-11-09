@@ -45,8 +45,7 @@ int get_proper_chunk_file(struct chunk_file_info *cfip)
  * return	: the size of data wrtien to file
  *				otherwise -1
  */
-int block_write(void *key,
-		const char *buf,
+int block_write(void *key, const char *buf,
 		size_t size,
 		struct chunk_file_info *cfip)
 {
@@ -148,7 +147,6 @@ int del_chunk(void *key, struct chunk_file_info *cfip)
 			--bd.ref_count;
 			ret = db_put(key, &bd);
 		}
-		
 		else {
 			add_free_chunk(&cfip->fcls[bd.fd_index],
 					(unsigned)(bd.offset >> FSP_OFFSET));
@@ -157,5 +155,18 @@ int del_chunk(void *key, struct chunk_file_info *cfip)
 		}
 	}
 	return ret;
+}
+
+
+int sync_chunk_data(struct chunk_file_info *cfip)
+{
+	int i = 0, ret = 0;
+	for (i = 0; i < cfip->total; ++i) {
+		ret = fsync(cfip->fds[i]);
+		if (!ret) {
+			printf("[WARNING]FSYNC ERROR: %s", strerror(errno));
+		}
+	}
+	return 0;
 }
 

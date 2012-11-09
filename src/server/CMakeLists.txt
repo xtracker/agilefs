@@ -1,7 +1,7 @@
 add_definitions (-Wall -g)
 
 set (SERVER_SRC_LIST
-	agilefs-server.c 
+	agilefs-server.h agilefs-server.c 
 	meta-server.c
 	chunks.h chunks.c
 	db_ops.h db_ops.c

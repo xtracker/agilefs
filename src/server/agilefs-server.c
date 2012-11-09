@@ -25,18 +25,15 @@
 
 #include "thread-mgr.h"
 
+#include "agilefs-server.h"
 
-
-//forward declaration of global free_chunk_link struct
-extern int meta_server_init(const char *db_path);
-extern int meta_server_close();
 
 struct chunk_file_info cfi = { 0 };
 
 int fd = -1;
 
 int over = 0;
-char buf[4096];
+char buf[FSP_SIZE];
 char hash[20] = {0};
 
 int test_get_one_chunk(void *key, char *buf, size_t size)
