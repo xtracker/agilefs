@@ -157,7 +157,10 @@ int del_chunk(void *key, struct chunk_file_info *cfip)
 	return ret;
 }
 
-
+/**
+ *
+ *
+ */
 int sync_chunk_data(struct chunk_file_info *cfip)
 {
 	int i = 0, ret = 0;
