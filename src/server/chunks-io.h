@@ -20,7 +20,7 @@ int block_write(void *key, const char *buf,
 		struct chunk_file_info *cfip);
 
 int block_read(void *key, char *buf,
-		size_t size,
+		size_t size, off_t offset,
 		struct chunk_file_info *cfip);
 
 int block_write_exclusive();

@@ -23,7 +23,7 @@ struct free_chunk_list { //free chunks table
 
 //free chunk list operations
 #define free_list(fclp, current) \
-	(fclp)->base[(current) >> PER_LIST_OFFSET][(current) & PER_LIST_SIZE]
+	(fclp)->base[(current) >> PER_LIST_OFFSET][(current) & (PER_LIST_SIZE - 1)]
 
 void printinfo(struct free_chunk_list *fclp);
 
