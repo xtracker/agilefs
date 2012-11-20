@@ -6,6 +6,10 @@
 #ifndef __SOCK_IO_H__
 #define __SOCK_IO_H__
 
+#if defined (__cplusplus)
+extern "C" {
+#endif
+
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -47,5 +51,8 @@ int sockio_set_sockopt(int sockfd,
 #define SET_NONBLOCK(x_fd) fcntl((x_fd), F_SETFL, O_NONBLOCK | \
 		fcntl((x_fd), F_GETFL, 0))
 
-#endif /**/
+#if defined (__cplusplus)
+}
+#endif
+#endif /*sockio.h*/
 

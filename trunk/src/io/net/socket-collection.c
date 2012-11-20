@@ -1,8 +1,8 @@
 /**
  * filename	:	socket-collection.c
- * Author	:	Zhao Guoyu jarvis.xera@gmail.com
- *
- *
+ * author	:	Zhao Guoyu jarvis.xera@gmail.com
+ * date		:	2012-10-01
+ * descript	:	socket collection opertations
  *
  */
 

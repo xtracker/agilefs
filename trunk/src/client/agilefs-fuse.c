@@ -1,8 +1,9 @@
-/*
-  filename:	fuse_core.c
-  Copyright (C) 2011 Zhao Guoyu <jarvis.xera@gmail.com>
-
-*/
+/**
+ *
+ * filename:	agilefs-fuse.c
+ * Copyright (C) 2011 Zhao Guoyu <jarvis.xera@gmail.com>
+ *
+ */
 #define FUSE_USE_VERSION 28
 
 #ifdef HAVE_CONFIG_H
@@ -27,33 +28,27 @@
 #ifdef HAVE_SETXATTR
 #include <sys/xattr.h>
 #endif
-
-#include "agilefs-def.h"
-
-#ifdef __USE_SHA1
-#include "sha1.h"
-#else
 #include "md5.h"
-#endif
-
 #include "fuse_type.h"
-#include "fuse_io_util.h"
 #include "fuse_cache.h"
+#include "fuse_io_util.h"
+#include "chunks.h"
+#include "chunks-io.h"
 
 #define BLOCK_SIZE 4096
-
-off_t g_block_size = BLOCK_SIZE; //64K=0x10000
-off_t init_offset = 16;
+static const off_t g_block_size = BLOCK_SIZE; //64K=0x10000
+static const off_t init_offset = 16;
 
 #ifdef __USE_SHA1
-	#define hash_size 20
+#define hash_size  20
 #else
-	#define hash_size 16
+#define hash_size  16
 #endif
 
-static char dest_path[256] = "/var/cas/";
-
-//file lock macros
+/**
+ *
+ * file lock macros
+ */
 #define read_lock_metafile(fd, offset, len) \
 	read_lock(fd, (offset / g_block_size * hash_size + init_offset), \
 			 SEEK_SET, (len + g_block_size) / g_block_size * hash_size );
@@ -69,6 +64,13 @@ static char dest_path[256] = "/var/cas/";
 #define write_unlock_metafile(fd, offset, len) \
 	unlock_reg(fd, (offset / g_block_size * hash_size + init_offset), \
 			SEEK_SET, (len + g_block_size) / g_block_size * hash_size);
+
+
+
+struct chunk_file_info cfi = { 0 };
+extern int meta_server_close();
+extern int meta_server_init(const char *db_path);
+
 
 /**
  * @func	equal to the stat/lstaf system call, the difference between the
@@ -98,6 +100,17 @@ static int fuse_getattr(const char *path, struct stat *stbuf)
 		}
 	}
 
+	return 0;
+}
+
+static int fuse_fgetattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi)
+{
+	int res;
+	res = fstat(file_descriptor(fi), stbuf);
+	if (res == -1)
+		return -errno;
+	if (stbuf->st_mode & S_IFREG)
+		stbuf->st_size = file_st_size(fi);
 	return 0;
 }
 /**
@@ -261,16 +274,16 @@ static int fuse_chown(const char *path, uid_t uid, gid_t gid)
 static int fuse_truncate(const char *path, off_t size)
 {
 	int fd, res = 0;
-	char src_block_path[256] = {0};
-	off_t st_size = 0,i = (size & (g_block_size - 1)) ?
+	off_t st_size = 0;
+	off_t i = (size & (g_block_size - 1)) ?
 						   size + g_block_size - (size & (g_block_size - 1)) : size;
+	unsigned char hash_key[hash_size] = {0};
 
 	fd = open(path, O_RDWR);
 	if (fd == -1)
 	{
 		return -errno;
 	}
-	strcpy(src_block_path, dest_path);
 	res = pread(fd, &st_size, sizeof(off_t), 0);
 	if(res == -1)
 	{
@@ -278,13 +291,34 @@ static int fuse_truncate(const char *path, off_t size)
 	}
 	while (i < st_size)
 	{
-		pread(fd, src_block_path + strlen(dest_path) + 20, hash_size, i / g_block_size * hash_size + init_offset);
-		md5_to_path(src_block_path + strlen(dest_path));
-		ulink_block_file(src_block_path);
+		pread(fd, hash_key, hash_size, i / g_block_size * hash_size + init_offset);
+		del_chunk(hash_key, &cfi);
 		i += g_block_size;
 	}
 	res = pwrite(fd, &size, sizeof(off_t), 0);
 	close(fd);
+	return 0;
+}
+
+static int fuse_ftruncate(const char *path, off_t size, struct fuse_file_info *fi)
+{
+	int fd, res;
+	off_t st_size, i;
+	unsigned char hash_key[hash_size] = {0};
+
+	i = (size & (g_block_size - 1)) ?
+		size + g_block_size - (size & (g_block_size - 1)) : size;
+	fd = file_descriptor(fi);
+	st_size = file_st_size(fi);
+
+	while (i < st_size) {
+		pread(fd, hash_key, hash_size, i / g_block_size * hash_size + init_offset);
+		del_chunk(hash_key, &cfi);
+		i += g_block_size;
+	}
+
+	res = pwrite(fd, &size, sizeof(off_t), 0);
+	file_st_size(fi) = size;
 	return 0;
 }
 
@@ -334,13 +368,14 @@ static int fuse_create(const char *path, mode_t mode, struct fuse_file_info* fi)
 {
 	off_t st_size[2] = {0};
 	int fd = open(path, O_CREAT | O_RDWR | O_EXCL, mode);
-	if(fd != -1)
-		fi->fh = fd;
-	else
-	{
-		perror("create file error:");
+	if(fd != -1) {
+		fi->fh = alloc_file_context();
+		file_descriptor(fi) = fd;
+	}
+	else {
 		return -errno;
 	}
+	file_st_size(fi) = 0;
 	pwrite(fd, st_size, 2 * sizeof(off_t), 0);
 	return 0;
 }
@@ -354,21 +389,18 @@ static int fuse_create(const char *path, mode_t mode, struct fuse_file_info* fi)
 static int fuse_open(const char *path, struct fuse_file_info *fi)
 {
 	int res;
-/**
-	if(fi->flags & O_TRUNC)
-	{
-		printf("O_TRUNC flag is set\n");
-		fuse_truncate(path, 0);
-		fi->flags &= ~O_TRUNC;
-	}
-*/
-	fi->flags &= ~O_WRONLY;
-	fi->flags |= O_RDWR;
+	int flags = fi->flags;
 
-	res = open(path, O_RDWR/*fi->flags*/);
+	flags &= ~O_WRONLY;
+	flags |= O_RDWR;
+	flags &= ~O_APPEND;
+
+	res = open(path, flags);
 	if (res == -1)
 		return -errno;
-	fi->fh = res;
+	fi->fh = alloc_file_context();
+	file_descriptor(fi) = res;
+	pread(res, &file_st_size(fi), sizeof(off_t), 0);
 
 	return 0;
 }
@@ -385,52 +417,39 @@ static int fuse_open(const char *path, struct fuse_file_info *fi)
 static int fuse_read(const char *path, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
 {
-	int		fd, bfd, err = 0;
-	int		res = 0;
+	int		fd, err = 0;
 	int		rdcount = 0;
 	off_t	i = offset, st_size = 0;
 
-	char	src_block_path[256] = {0};
-	unsigned char 
-			*hashdata=(unsigned char*)(src_block_path + strlen(dest_path) + 20);
+	unsigned char hash_key[hash_size];
 
-	strcpy(src_block_path, dest_path);
 
-	fd = fi->fh;		//get file descriptor stored in fuse_file_info
+	fd = file_descriptor(fi);		//get file descriptor stored in fuse_file_info
 
-	read_lock_metafile(fd, offset, size);
+//	read_lock_metafile(fd, offset, size);
 
-	res = pread(fd, &st_size, sizeof(off_t), 0);
-	if(res == -1)
-	{
-		perror("read filesize error:");
-		goto read_err;
-		//return -errno;
-	}
+	st_size = file_st_size(fi);
+	
 	st_size = st_size < offset + size ? st_size : offset + size;
-	while (i < /*st_size*/offset + size)
-	{
-		err = pread(fd, hashdata, hash_size, i / g_block_size * hash_size + init_offset);
-		if(err == -1)
-		{
-			perror("read md5 error");
+
+	while (i < st_size) {
+		
+		err = pread(fd, hash_key, hash_size, i / g_block_size * hash_size + init_offset);
+		
+		if(err == -1) {
 			goto read_err;
 			//return -errno;
 		}
-		int ret = cache_read(hashdata, buf + i - offset, get_min(g_block_size, size - i + offset));
+		
+		int ret = cache_read(hash_key, buf + i - offset, get_min(g_block_size, size - i + offset));
 		if(ret == 0) {
 			unsigned char hash[hash_size];
-			memcpy(hash,hashdata,hash_size);
-			md5_to_path(src_block_path + strlen(dest_path));
-			bfd = open(src_block_path, O_RDONLY);
-			if (bfd == -1)
-			{
-				perror("open block file error-->");
-				goto read_err;
-			}
-			rdcount += pread(bfd, buf + i - offset, get_min(g_block_size, size - i + offset),
-							(i & (g_block_size - 1)));
-			close(bfd);
+			memcpy(hash,hash_key,hash_size);
+			
+			rdcount += block_read(hash_key, buf + i - offset, 
+					get_min(g_block_size, size - i + offset), 
+					i & (g_block_size - 1), &cfi);
+
 			cache_write(hash, buf + i - offset, get_min(g_block_size, size - i + offset));
 		} else {
 			rdcount += ret;
@@ -438,14 +457,15 @@ static int fuse_read(const char *path, char *buf, size_t size, off_t offset,
 		i += get_min(size + offset - i, g_block_size - (i & (g_block_size - 1)));
 	}
 
-	read_unlock_metafile(fd, offset, size);
+//	read_unlock_metafile(fd, offset, size);
 
 	return rdcount;
 
 read_err:
-	read_unlock_metafile(fd, offset, size);
+//	read_unlock_metafile(fd, offset, size);
 	return -errno;
 }
+
 /**
  * @func redesign the write system call using CAS
  * @param path of the file
@@ -456,69 +476,51 @@ read_err:
  * @return the actual count of bytes writen to the file or errno if error occurs
  */
 static int fuse_write(const char *path, const char *buf, size_t size,
-		off_t offset, struct fuse_file_info *fi)
+		     off_t offset, struct fuse_file_info *fi)
 {
-	int		fd, bfd;
+	int		fd = -1;
 	int		res = 0;
-	int		err = 0;
 	long	size_to_write = 0;
 	off_t	st_size = 0, i = offset;
 
-	char	src_block_path[256], dest_block_path[256], md5char[48] = { 0 };
-	unsigned char 
-			data[BLOCK_SIZE], *hashdata = (unsigned char *)(md5char + 20);
+	unsigned char data[BLOCK_SIZE], hash_key[hash_size];
 
-	fd = fi->fh;
+	fd = file_descriptor(fi);
 
-	write_lock_metafile(fd, offset, size);
+//	write_lock_metafile(fd, offset, size);
 
-	res = pread(fd, &st_size, sizeof(off_t), 0); //get file size and store it into st_size
-	if (res == -1)
-	{
-		perror("read size error:");
-		goto write_err;
-	}
+	st_size = file_st_size(fi);
 
-	while (i < offset + size)
-	{
+	while (i < offset + size) {
+
 		memset(data, 0, sizeof(data));
-		if (i < st_size)
-		{
-			res = pread(fd, hashdata, hash_size,
-					i / g_block_size * hash_size + init_offset);
-			if (res == hash_size)
-			{
-				md5_to_path(md5char);
-				sprintf(src_block_path, "%s%s", dest_path, md5char);
-				bfd = open(src_block_path, O_RDONLY);
-				pread(bfd, data, g_block_size, 0);
-				close(bfd);
-				ulink_block_file(src_block_path);
-			}
-		}
-		size_to_write = get_min((long) size + offset - i,
-								g_block_size - (i & (g_block_size - 1)));
+		size_to_write = get_min((long) (size + offset - i), g_block_size - (i & (g_block_size - 1)));
 
+		res = pread(fd, hash_key, hash_size,
+				i / g_block_size * hash_size + init_offset);
+
+		if (size_to_write != g_block_size) {
+			if (-1 == block_read(hash_key, (char *)data, g_block_size, 0, &cfi))
+				printf("[WRITE] block read error!");
+		}
+
+		del_chunk(hash_key, &cfi);
 		memcpy(data + (i & (g_block_size - 1)), buf + i - offset, size_to_write);
 
-		do_hash(data, g_block_size, hashdata);
-		err = pwrite(fd, hashdata, hash_size, i / g_block_size * hash_size + init_offset);
+		do_hash(data, g_block_size, hash_key);
+		
+		res = pwrite(fd, hash_key, hash_size, i / g_block_size * hash_size + init_offset);
 
-		if (err != hash_size)
-		{
+		if (res != hash_size) {
 			printf("write metafile error at %ld\n", (long) i);
 			//return -1;
 			goto write_err;
 		}
 		unsigned char hash[hash_size];
-		md5_to_path(md5char);
-		//printf(" %s\n", md5char);
-		sprintf(dest_block_path, "%s%s", dest_path, md5char);
 
-		err = write_block_file(dest_block_path, data, g_block_size);
-		if (err != 0)
-		{
-			perror("error @ offset %d");
+		res = put_new_chunk(hash_key, (char *)data, g_block_size, &cfi);
+		if (res) {
+			printf("[WRITE] put new chunk error!");
 			goto write_err;
 		}
 		cache_write(hash,data,g_block_size);
@@ -526,20 +528,13 @@ static int fuse_write(const char *path, const char *buf, size_t size,
 	}
 
 	//update file size
-	st_size = st_size < offset + size ? offset + size : st_size;
-	//write new size to file
-	res = pwrite(fd, &st_size, sizeof(off_t), 0);
-	if (res < sizeof(off_t))
-	{
-		printf("update size error:");
-		goto write_err;
-	}
+	file_st_size(fi) = st_size < offset + size ? offset + size : st_size;
 
-	write_unlock_metafile(fd, offset, size);
+//	write_unlock_metafile(fd, offset, size);
 
 	return size;
 write_err:
-	write_unlock_metafile(fd, offset, size);
+//	write_unlock_metafile(fd, offset, size);
 	return -errno;
 }
 
@@ -558,6 +553,11 @@ static int fuse_statfs(const char *path, struct statvfs *stbuf)
 	return 0;
 }
 
+static int fuse_flush(const char *path, struct fuse_file_info *fi)
+{
+	return 0;
+}
+
 /**
  * @func
  * @param
@@ -570,7 +570,17 @@ static int fuse_release(const char *path, struct fuse_file_info *fi)
 	   unimplemented */
 
 	(void) path;
-	(void) fi;
+	int ret = 0;
+	int fd = file_descriptor(fi);
+	off_t st_size = file_st_size(fi);
+	ret = pwrite(fd, &st_size, sizeof(st_size), 0);
+	if (ret < 0) {
+		printf("[ERROR]update file size error: ");
+		return -errno;
+	}
+	sync_chunk_file(&cfi);
+	close(fd);
+	free((struct file_context *)fi->fh);
 	return 0;
 }
 
@@ -581,9 +591,17 @@ static int fuse_fsync(const char *path, int isdatasync,
 	   unimplemented */
 
 	(void) path;
-	(void) isdatasync;
-	(void) fi;
-	return 0;
+	int ret = 0;
+	pwrite(file_descriptor(fi), &file_st_size(fi), sizeof(off_t), 0);
+	if (isdatasync)
+		ret = fdatasync(file_descriptor(fi));
+	else
+		ret = fsync(file_descriptor(fi));
+	//sync_chunk_file(&cfi);
+	if (ret == -1)
+		return -errno;
+	else
+		return 0;
 }
 
 /**
@@ -600,7 +618,11 @@ static int fuse_fsync(const char *path, int isdatasync,
 static int fuse_ioctl(const char *path, int cmd, void *arg, struct fuse_file_info *fi,
 						unsigned int flag, void *data)
 {
-	return ioctl(fi->fh, cmd, arg, data);
+	int ret = ioctl(file_descriptor(fi), cmd, arg, data);
+	if (ret == -1)
+		return -errno;
+	else
+		return 0;
 }
 
 #ifdef HAVE_SETXATTR
@@ -642,6 +664,7 @@ static int fuse_removexattr(const char *path, const char *name)
 
 static struct fuse_operations fuse_oper = {
 	.getattr	= fuse_getattr,
+	.fgetattr	= fuse_fgetattr,
 	.access		= fuse_access,
 	.readlink	= fuse_readlink,
 	.readdir	= fuse_readdir,
@@ -655,6 +678,7 @@ static struct fuse_operations fuse_oper = {
 	.chmod		= fuse_chmod,
 	.chown		= fuse_chown,
 	.truncate	= fuse_truncate,
+	.ftruncate	= fuse_ftruncate,
 	.utimens	= fuse_utimens,
 	.create		= fuse_create,
 	.open		= fuse_open,
@@ -662,6 +686,7 @@ static struct fuse_operations fuse_oper = {
 	.write		= fuse_write,
 
 	.statfs		= fuse_statfs,
+	.flush		= fuse_flush,
 	.release	= fuse_release,
 	.fsync		= fuse_fsync,
 	.ioctl		= fuse_ioctl,
@@ -673,17 +698,33 @@ static struct fuse_operations fuse_oper = {
 #endif
 };
 
+
 int main(int argc, char *argv[])
 {
-#ifdef _DEBUG_OUTPUT
-	freopen("/root/jarvis/log.txt","w+",stderr);
-	freopen("/root/jarvis/log_out.txt","w+",stdout);
+#if defined (__DEBUG_OUTPUT)
+	freopen("/root/log_err.txt","w+",stderr);
+	freopen("/root/log_out.txt","w+",stdout);
 #endif
 	umask(0);
+	int ret = 0;
+
+	ret = meta_server_init("/root/agilefs-hash.db");
+	if (ret != 0)
+		goto meta_server_init_err;
+
+	ret = init_chunk_file(&cfi, "/root/.agilefs.conf");
+	if (ret != 0)	
+		goto server_init_err;
 
 #if FUSE_VERSION >= 26
-	return fuse_main(argc, argv, &fuse_oper, NULL);
+	ret = fuse_main(argc, argv, &fuse_oper, NULL);
 #else
-	return fuse_main(argc, argv, &fuse_oper);
+	ret = fuse_main(argc, argc, &fuse_oper);
 #endif
+
+server_init_err:	
+	release_chunk_file(&cfi, "/root/.agilefs.conf");
+meta_server_init_err:
+	meta_server_close();
+	return 0;
 }

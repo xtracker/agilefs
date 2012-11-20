@@ -21,6 +21,7 @@
 #include "chunks.h"
 #include "chunks-io.h"
 #include "db_ops.h"
+#include "z-hash.h"
 
 extern struct chunk_file_info cfi;
 
@@ -85,7 +86,7 @@ int block_write(void *key, const char *buf,
  *
  *	return	:	size of data read, otherwise -1
  */
-int block_read(void *key, char *buf, size_t size,
+int block_read(void *key, char *buf, size_t size, off_t offset,
 		struct chunk_file_info *cfip)
 {
 	int ret = 0, fd = -1;
@@ -98,7 +99,7 @@ int block_read(void *key, char *buf, size_t size,
 	}
 	printf("read share_num is %d\n", bd.ref_count);
 	fd = cfip->fds[bd.fd_index];
-	ret = pread(fd, buf, size, bd.offset);
+	ret = pread(fd, buf, size, bd.offset + offset);
 	return ret;
 }
 
